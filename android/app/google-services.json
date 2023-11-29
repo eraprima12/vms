@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1048493801736",
+    "firebase_url": "https://vehicle-monitoring-syste-8bfa1-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "vehicle-monitoring-syste-8bfa1",
+    "storage_bucket": "vehicle-monitoring-syste-8bfa1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1048493801736:android:d2070dd6b378870b26ecbd",
+        "android_client_info": {
+          "package_name": "com.era.vms"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1048493801736-fbipgi7he4c3u7ujmqphaieof35e1t5j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.era.vms",
+            "certificate_hash": "58e5c00eabd205e8beb4ed27a4582670b6c375a1"
+          }
+        },
+        {
+          "client_id": "1048493801736-iki7202j29hs5v477k6i1eeqmtpuj2i7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDB_YwlKkmTehh32BjNAKDzR7g577AtDwM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1048493801736-iki7202j29hs5v477k6i1eeqmtpuj2i7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
