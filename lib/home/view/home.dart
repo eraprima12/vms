@@ -384,6 +384,113 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                           const SizedBox(height: 20),
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: const [
+                                BoxShadow(
+                                  offset: Offset(0, 1),
+                                  spreadRadius: 1,
+                                  blurRadius: 5,
+                                  color: primaryColor,
+                                )
+                              ],
+                            ),
+                            height: 200,
+                            width: width,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Stack(
+                                children: [
+                                  const Positioned(
+                                    right: -50,
+                                    bottom: -50,
+                                    child: Icon(
+                                      Icons.location_city,
+                                      size: 250,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                  CardWithTitleAndSubtitle(
+                                    color: primaryColor.withOpacity(0.6),
+                                    title:
+                                        'Driver with Lowest\nPerformance today',
+                                    data: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(
+                                          height: 40,
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            CircleAvatar(
+                                              backgroundColor: Colors.white,
+                                              child: provider.lowestDriverData
+                                                          .first.avatar !=
+                                                      ''
+                                                  ? ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              50),
+                                                      child: Image.network(
+                                                        provider
+                                                            .lowestDriverData
+                                                            .first
+                                                            .avatar,
+                                                        height: 50,
+                                                        width: 50,
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                                    )
+                                                  : WidgetText(
+                                                      text: provider
+                                                          .lowestDriverData
+                                                          .first
+                                                          .name
+                                                          .substring(0, 1)
+                                                          .toUpperCase(),
+                                                      color: fourthColor,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                            ),
+                                            const SizedBox(
+                                              width: 10,
+                                            ),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  WidgetText(
+                                                    text: provider
+                                                        .lowestDriverData
+                                                        .first
+                                                        .name,
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  WidgetText(
+                                                    text:
+                                                        '${provider.lowestDriverData.first.distanceToday} KM',
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                           const SizedBox(
                             height: 120,
                           )
