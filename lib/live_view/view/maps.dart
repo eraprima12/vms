@@ -29,7 +29,10 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback(
-      (_) async {},
+      (_) async {
+        Provider.of<DriversController>(context, listen: false)
+            .getAndMapDriverData();
+      },
     );
     mapController = MapController();
     _markersStream =
@@ -101,8 +104,9 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate: mapKey,
-                      additionalOptions: {'accessToken': mbToken, 'id': mbId},
+                      urlTemplate:
+                          "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                      subdomains: const ['a', 'b', 'c'],
                     ),
                     MarkerLayer(
                       markers: markers,

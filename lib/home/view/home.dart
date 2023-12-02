@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vms/auth/controller/auth_controller.dart';
@@ -6,8 +8,8 @@ import 'package:vms/auth/model/driver_model.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/gen/position_generator.dart';
 import 'package:vms/global/widget/widgettext.dart';
+import 'package:vms/home/controller/home_controller.dart';
 import 'package:vms/home/widget/card_widget.dart';
-import 'package:vms/live_view/view/detail_vehicle.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,20 +21,26 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<DriversController>(context, listen: false)
-          .getAndMapDriverData();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      var driverData =
+          await Provider.of<DriversController>(context, listen: false)
+              .getAndMapDriverData();
+
+      await Provider.of<HomeController>(context, listen: false)
+          .mapAndStoreActionModel(driverData: driverData);
     });
     super.initState();
   }
-
-  SearchController searchController = SearchController();
 
   @override
   Widget build(BuildContext context) {
     var provider = Provider.of<DriversController>(context);
     var unlistenedProvider =
         Provider.of<DriversController>(context, listen: false);
+
+    var homeProvider = Provider.of<HomeController>(context);
+    var unlistenedHomeProvider =
+        Provider.of<HomeController>(context, listen: false);
     return Scaffold(
       body: Builder(builder: (context) {
         return SafeArea(
@@ -100,45 +108,34 @@ class _HomePageState extends State<HomePage> {
                                 color: Color.fromARGB(255, 255, 255, 255),
                               ),
                             ),
-                            searchController: searchController,
-                            isFullScreen: true,
+                            searchController: homeProvider.searchController,
+                            isFullScreen: false,
                             suggestionsBuilder: (BuildContext context,
                                 SearchController controller) {
-                              final filteredDrivers = provider.driverData
+                              final filteredActions = homeProvider.listOfActions
                                   .where(
                                     (element) =>
-                                        element.licensePlate
-                                            .toLowerCase()
-                                            .contains(
-                                              searchController.text
+                                        element.title.toLowerCase().contains(
+                                              homeProvider.searchController.text
                                                   .toLowerCase(),
                                             ) ||
-                                        element.name.toLowerCase().contains(
-                                              searchController.text
+                                        element.suffix.toLowerCase().contains(
+                                              homeProvider.searchController.text
                                                   .toLowerCase(),
                                             ),
                                   )
                                   .toList();
                               return List<ListTile>.generate(
-                                filteredDrivers.length,
+                                filteredActions.length,
                                 (int index) {
                                   final String name =
-                                      filteredDrivers[index].name;
+                                      filteredActions[index].title;
                                   final String licensePlate =
-                                      filteredDrivers[index].licensePlate;
+                                      filteredActions[index].suffix;
                                   return ListTile(
                                     title: Text(name),
                                     trailing: Text(licensePlate),
-                                    onTap: () {
-                                      FocusManager.instance.primaryFocus
-                                          ?.unfocus();
-                                      searchController.closeView(name);
-                                      pageMover.push(
-                                        widget: DetailVehiclePage(
-                                          licensePlate: licensePlate,
-                                        ),
-                                      );
-                                    },
+                                    onTap: filteredActions[index].voidCallback,
                                   );
                                 },
                               );
@@ -154,16 +151,16 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                 ),
                                 onTap: () {
-                                  searchController.openView();
+                                  homeProvider.searchController.openView();
                                 },
-                                controller: searchController,
+                                controller: homeProvider.searchController,
                                 leading: const Icon(Icons.search),
                                 hintText: 'Search',
                                 backgroundColor: MaterialStateColor.resolveWith(
                                   (states) => Colors.white,
                                 ),
                                 onChanged: (val) {
-                                  searchController.openView();
+                                  homeProvider.searchController.openView();
                                   setState(() {});
                                 },
                               );
@@ -194,7 +191,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                               Expanded(
                                 child: CardWithTitleAndSubtitle(
-                                  color: secondaryColor,
+                                  color: primaryColor,
                                   title: 'Vehicle total',
                                   data: WidgetText(
                                     color: Colors.white,
@@ -299,7 +296,7 @@ class _HomePageState extends State<HomePage> {
                               provider.lowestDriverData.isNotEmpty
                                   ? Expanded(
                                       child: CardWithTitleAndSubtitle(
-                                        color: fourthColor,
+                                        color: secondaryColor,
                                         title:
                                             'Driver with Lowest\nPerformance today',
                                         data: Column(
@@ -341,7 +338,7 @@ class _HomePageState extends State<HomePage> {
                                                               .name
                                                               .substring(0, 1)
                                                               .toUpperCase(),
-                                                          color: fourthColor,
+                                                          color: secondaryColor,
                                                           fontWeight:
                                                               FontWeight.bold,
                                                         ),
@@ -452,7 +449,7 @@ class _HomePageState extends State<HomePage> {
                                                           .name
                                                           .substring(0, 1)
                                                           .toUpperCase(),
-                                                      color: fourthColor,
+                                                      color: thirdColor,
                                                       fontWeight:
                                                           FontWeight.bold,
                                                     ),

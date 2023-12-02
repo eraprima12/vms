@@ -5,7 +5,7 @@ import 'package:vms/auth/controller/auth_controller.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/home/view/home.dart';
 import 'package:vms/live_view/view/maps.dart';
-import 'package:vms/profile/view/profile.dart';
+import 'package:vms/settings/view/settings.dart';
 
 class TabBarBottomNavPage extends StatefulWidget {
   const TabBarBottomNavPage({super.key});
@@ -27,7 +27,7 @@ class _TabBarBottomNavPageState extends State<TabBarBottomNavPage> {
   List<Widget> widgetOptions = <Widget>[
     const HomePage(),
     const MapScreen(),
-    const Profile(),
+    const Settings(),
   ];
 
   @override
@@ -77,7 +77,7 @@ class _TabBarBottomNavPageState extends State<TabBarBottomNavPage> {
                 ),
                 GButton(
                   icon: Icons.person_outline,
-                  text: 'Profile',
+                  text: 'Settings',
                   iconActiveColor: Colors.white,
                   backgroundColor: primaryColor,
                   textColor: Colors.white,

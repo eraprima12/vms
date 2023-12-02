@@ -122,6 +122,7 @@ class DriversController extends ChangeNotifier {
         .sort((a, b) => b.distanceToday.compareTo(a.distanceToday));
     driverData = List.from(driverList);
     loadingGetUser = false;
+    return driverData;
   }
 
   getDriverStatistic(String licensePlate) {

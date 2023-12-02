@@ -12,14 +12,12 @@ class MovePageHandler implements MovePageContract {
   @override
   pop() {
     Navigator.pop(navigatorKey.currentContext!);
-    throw UnimplementedError();
   }
 
   @override
   push({required Widget widget}) {
     Navigator.push(navigatorKey.currentContext!,
         MaterialPageRoute(builder: (_) => widget));
-    throw UnimplementedError();
   }
 
   @override
@@ -32,6 +30,5 @@ class MovePageHandler implements MovePageContract {
   pushAndReplace({required Widget widget}) {
     Navigator.pushReplacement(navigatorKey.currentContext!,
         MaterialPageRoute(builder: (_) => widget));
-    throw UnimplementedError();
   }
 }

@@ -1,7 +1,5 @@
 // ignore_for_file: must_be_immutable
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -9,9 +7,9 @@ import 'package:provider/provider.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/auth/model/driver_model.dart';
 import 'package:vms/constant.dart';
-import 'package:vms/gen/assets.gen.dart';
 import 'package:vms/global/function/status_color.dart';
 import 'package:vms/global/widget/widgettext.dart';
+import 'package:vms/live_view/view/trip_history.dart';
 import 'package:vms/live_view/widget/chart.dart';
 import 'package:vms/live_view/widget/custom_marker.dart';
 
@@ -50,36 +48,41 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
           onTap: () {
             //! nanti disini
           },
-          child: Container(
-            decoration: BoxDecoration(
-              color: primaryColor,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: const [
-                BoxShadow(
-                  offset: Offset(0, 1),
-                  spreadRadius: 1,
-                  blurRadius: 5,
-                  color: primaryColor,
-                ),
-              ],
-            ),
-            child: const Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  WidgetText(
-                    text: 'Trip History',
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+          child: GestureDetector(
+            onTap: () {
+              pageMover.push(widget: const TripHistory());
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: primaryColor,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: const [
+                  BoxShadow(
+                    offset: Offset(0, 1),
+                    spreadRadius: 1,
+                    blurRadius: 5,
+                    color: primaryColor,
                   ),
-                  SizedBox(
-                    width: 10,
-                  ),
-                  Icon(
-                    Icons.history,
-                    color: Colors.white,
-                  )
                 ],
+              ),
+              child: const Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    WidgetText(
+                      text: 'Trip History',
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Icon(
+                      Icons.history,
+                      color: Colors.white,
+                    )
+                  ],
+                ),
               ),
             ),
           ),
@@ -103,8 +106,9 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: mapKey,
-                  additionalOptions: {'accessToken': mbToken, 'id': mbId},
+                  urlTemplate:
+                      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                  subdomains: const ['a', 'b', 'c'],
                 ),
                 MarkerLayer(
                   markers: [
