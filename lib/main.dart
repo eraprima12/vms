@@ -1,22 +1,25 @@
-// ignore_for_file: use_build_context_synchronous
+// ignore_for_file: use_build_context_synchronous, use_build_context_synchronously
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
+import 'package:vms/admin/home/controller/home_controller.dart';
+import 'package:vms/admin/menu/view/menu.dart';
 import 'package:vms/auth/controller/auth_controller.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/auth/view/auth_page.dart';
 import 'package:vms/constant.dart';
+import 'package:vms/driver/home/view/home.dart';
 import 'package:vms/gen/assets.gen.dart';
+import 'package:vms/global/function/local_storage_handler.dart';
 import 'package:vms/global/widget/widgettext.dart';
-import 'package:vms/home/controller/home_controller.dart';
-import 'package:vms/menu/view/menu.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await GetStorage.init();
+
   runApp(
     MultiProvider(
       providers: [
@@ -61,13 +64,16 @@ class _SplashscreenState extends State<Splashscreen> {
     WidgetsBinding.instance.addPostFrameCallback(
       (_) async {
         String? token = localStorage.read(tokenKey);
+        String? uid = localStorage.read(uidKey) ?? '';
         if (token != null) {
-          String uid = localStorage.read(uidKey);
           await Provider.of<AuthController>(context, listen: false)
               .getAndSetUserDetail(uid: uid);
           await Provider.of<DriversController>(context, listen: false)
               .getAndMapDriverData();
-          pageMover.pushAndRemove(widget: const TabBarBottomNavPage());
+          pageMover.pushAndRemove(
+              widget: getIsDriver()
+                  ? const HomeDriver()
+                  : const TabBarBottomNavPage());
         } else {
           Future.delayed(const Duration(milliseconds: 500)).then(
             (value) => pageMover.pushAndRemove(widget: const LoginPage()),
@@ -97,7 +103,7 @@ class _SplashscreenState extends State<Splashscreen> {
                 width: 150,
                 child: Lottie.asset(Assets.splash),
               ),
-              const WidgetText(
+              WidgetText(
                 text: 'VMS',
                 color: primaryColor,
                 fontSize: 24,

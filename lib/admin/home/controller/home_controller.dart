@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:vms/admin/live_view/view/detail_vehicle.dart';
+import 'package:vms/admin/settings/view/settings.dart';
 import 'package:vms/auth/model/driver_model.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/global/model/action_model.dart';
-import 'package:vms/live_view/view/detail_vehicle.dart';
-import 'package:vms/settings/view/settings.dart';
 
 class HomeController extends ChangeNotifier {
   SearchController searchController = SearchController();

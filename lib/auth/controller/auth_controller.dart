@@ -5,16 +5,22 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
+import 'package:vms/admin/menu/view/menu.dart';
+import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/auth/controller/fcm_token_listener.dart';
+import 'package:vms/auth/model/driver_model.dart';
 import 'package:vms/auth/model/user_model.dart';
 import 'package:vms/auth/view/auth_page.dart';
 import 'package:vms/constant.dart';
+import 'package:vms/driver/home/view/home.dart';
+import 'package:vms/global/function/local_storage_handler.dart';
 import 'package:vms/global/widget/popup_handler.dart';
-import 'package:vms/menu/view/menu.dart';
 
 class AuthController extends ChangeNotifier {
   UserModel? user =
       UserModel(uid: '', username: '', password: '', fcmToken: '');
+  DriverModel? userDriver;
   var popupHandler = PopupHandler();
   var context = navigatorKey.currentContext!;
   final formKey = GlobalKey<FormState>();
@@ -22,13 +28,36 @@ class AuthController extends ChangeNotifier {
   final TextEditingController _passwordController = TextEditingController();
   TextEditingController get usernameController => _usernameController;
   TextEditingController get passwordController => _passwordController;
-
   bool _loadingLogin = false;
   bool get loadingLogin => _loadingLogin;
-
   set loadingLogin(bool value) {
     _loadingLogin = value;
     notifyListeners();
+  }
+
+  getMasterSettings() async {
+    try {
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection('master')
+          .doc('master')
+          .get();
+
+      if (snapshot.exists) {
+        Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+        var provider = Provider.of<DriversController>(context, listen: false);
+        logger.f(data);
+        DriverModel driver = DriverModel.fromMap(data);
+        var positionData = await provider.getPosition(uid: driver.uid);
+        driver.position = positionData[0];
+        driver.totalDistance = provider.calculateTotalDistance(positionData[1]);
+        return driver;
+      } else {
+        throw 'Error while getting user';
+      }
+    } catch (e) {
+      popupHandler.showErrorPopup(e.toString());
+    }
+    return null;
   }
 
   logout() {
@@ -37,7 +66,11 @@ class AuthController extends ChangeNotifier {
   }
 
   getAndSetUserDetail({required String uid}) async {
-    user = await getUserDetails(uid: uid);
+    if (!getIsDriver()) {
+      user = await getUserDetails(uid: uid);
+    } else {
+      userDriver = await getDriverDetails(uid: uid);
+    }
   }
 
   initListener() async {
@@ -48,6 +81,29 @@ class AuthController extends ChangeNotifier {
       currentToken: user!.fcmToken,
     );
     tokenListener.startListening();
+  }
+
+  Future<DriverModel?> getDriverDetails({required String uid}) async {
+    try {
+      DocumentSnapshot snapshot =
+          await FirebaseFirestore.instance.collection('driver').doc(uid).get();
+
+      if (snapshot.exists) {
+        Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+        var provider = Provider.of<DriversController>(context, listen: false);
+        logger.f(data);
+        DriverModel driver = DriverModel.fromMap(data);
+        var positionData = await provider.getPosition(uid: driver.uid);
+        driver.position = positionData[0];
+        driver.totalDistance = provider.calculateTotalDistance(positionData[1]);
+        return driver;
+      } else {
+        throw 'Error while getting user';
+      }
+    } catch (e) {
+      popupHandler.showErrorPopup(e.toString());
+    }
+    return null;
   }
 
   Future<UserModel?> getUserDetails({required String uid}) async {
@@ -86,21 +142,33 @@ class AuthController extends ChangeNotifier {
           .limit(1)
           .get();
 
-      if (querySnapshot.docs.isNotEmpty) {
-        DocumentSnapshot userDoc = querySnapshot.docs.first;
-        String storedPassword = userDoc.get('password');
-        String uid = userDoc.id;
-        loadingLogin = false;
-
-        if (passwordController.text == storedPassword) {
-          String currentToken = await updateToken(uid: uid);
-          localStorage.write(tokenKey, currentToken);
-          localStorage.write(uidKey, uid);
-          pageMover.pushAndRemove(widget: const TabBarBottomNavPage());
-        } else {
+      if (querySnapshot.docs.isEmpty) {
+        querySnapshot = await FirebaseFirestore.instance
+            .collection('driver')
+            .where('username', isEqualTo: usernameController.text)
+            .limit(1)
+            .get();
+        putIsDriver(value: true);
+        if (querySnapshot.docs.isEmpty) {
+          putIsDriver(value: false);
           loadingLogin = false;
           throw 'Wrong username/password';
         }
+      }
+
+      DocumentSnapshot userDoc = querySnapshot.docs.first;
+      String storedPassword = userDoc.get('password');
+      String uid = userDoc.id;
+      loadingLogin = false;
+
+      if (passwordController.text == storedPassword) {
+        String currentToken = await updateToken(uid: uid);
+        localStorage.write(tokenKey, currentToken);
+        localStorage.write(uidKey, uid);
+        pageMover.pushAndRemove(
+            widget: getIsDriver()
+                ? const HomeDriver()
+                : const TabBarBottomNavPage());
       } else {
         loadingLogin = false;
         throw 'Wrong username/password';
@@ -116,7 +184,7 @@ class AuthController extends ChangeNotifier {
     try {
       String fcmToken = await FirebaseMessaging.instance.getToken() ?? '';
       await FirebaseFirestore.instance
-          .collection('admin')
+          .collection(!getIsDriver() ? 'admin' : 'driver')
           .doc(uid)
           .update({'fcmToken': fcmToken}).onError(
               (error, stackTrace) => throw 'Credential Failure');

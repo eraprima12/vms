@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:vms/admin/live_view/view/trip_history.dart';
+import 'package:vms/admin/live_view/widget/chart.dart';
+import 'package:vms/admin/live_view/widget/custom_marker.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/auth/model/driver_model.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/global/function/status_color.dart';
 import 'package:vms/global/widget/widgettext.dart';
-import 'package:vms/live_view/view/trip_history.dart';
-import 'package:vms/live_view/widget/chart.dart';
-import 'package:vms/live_view/widget/custom_marker.dart';
 
 class DetailVehiclePage extends StatefulWidget {
   DetailVehiclePage({Key? key, required this.licensePlate}) : super(key: key);
@@ -56,9 +56,9 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
               decoration: BoxDecoration(
                 color: primaryColor,
                 borderRadius: BorderRadius.circular(8),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    offset: Offset(0, 1),
+                    offset: const Offset(0, 1),
                     spreadRadius: 1,
                     blurRadius: 5,
                     color: primaryColor,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:vms/admin/settings/view/master_settings.dart';
 import 'package:vms/auth/controller/auth_controller.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/global/model/action_model.dart';
@@ -22,7 +23,9 @@ class _SettingsState extends State<Settings> {
     ActionModel(
       title: "Master Settings",
       suffix: "",
-      voidCallback: () => print("Callback for Model 2"),
+      voidCallback: () {
+        pageMover.push(widget: const MasterSettings());
+      },
     ),
     // Add more models as needed
   ];

@@ -4,9 +4,11 @@ import 'dart:math' show cos, sqrt, asin, sin, pow, min, max;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:vms/auth/model/driver_model.dart';
+import 'package:vms/constant.dart';
 import 'package:vms/global/function/date_function.dart';
 
 class DriversController extends ChangeNotifier {
@@ -78,6 +80,22 @@ class DriversController extends ChangeNotifier {
     }
 
     return totalDistance;
+  }
+
+  Future<String> getAddressFromLatLng(
+      {required double latitude, required double longitude}) async {
+    String address = '';
+    List<Placemark> placemarks = await placemarkFromCoordinates(
+      latitude,
+      longitude,
+    );
+
+    if (placemarks.isNotEmpty) {
+      Placemark placemark = placemarks.first;
+      address =
+          '${placemark.name}, ${placemark.locality}, ${placemark.country}';
+    }
+    return address;
   }
 
   Future<Map<int, dynamic>> getPosition({required String uid}) async {

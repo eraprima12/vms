@@ -6,10 +6,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:provider/provider.dart';
+import 'package:vms/admin/live_view/view/detail_vehicle.dart';
+import 'package:vms/admin/live_view/widget/custom_marker.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/constant.dart';
-import 'package:vms/live_view/view/detail_vehicle.dart';
-import 'package:vms/live_view/widget/custom_marker.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});

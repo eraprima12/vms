@@ -2,14 +2,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:vms/admin/home/controller/home_controller.dart';
+import 'package:vms/admin/home/widget/card_widget.dart';
 import 'package:vms/auth/controller/auth_controller.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/auth/model/driver_model.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/gen/position_generator.dart';
 import 'package:vms/global/widget/widgettext.dart';
-import 'package:vms/home/controller/home_controller.dart';
-import 'package:vms/home/widget/card_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -384,9 +384,9 @@ class _HomePageState extends State<HomePage> {
                           Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
-                              boxShadow: const [
+                              boxShadow: [
                                 BoxShadow(
-                                  offset: Offset(0, 1),
+                                  offset: const Offset(0, 1),
                                   spreadRadius: 1,
                                   blurRadius: 5,
                                   color: primaryColor,
@@ -501,49 +501,6 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       }),
-    );
-  }
-}
-
-class CardWithAvatar extends StatelessWidget {
-  const CardWithAvatar({
-    super.key,
-    required this.param,
-  });
-
-  final DriverModel param;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: primaryColor,
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.white,
-          child: param.avatar != ''
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(50),
-                  child: Image.network(
-                    param.avatar,
-                    height: 100,
-                    width: 100,
-                    fit: BoxFit.cover,
-                  ),
-                )
-              : WidgetText(
-                  text: param.name.substring(0, 1).toUpperCase(),
-                  color: textColor,
-                ),
-        ),
-        title: WidgetText(
-          text: param.name,
-          color: Colors.white,
-        ),
-        subtitle: WidgetText(
-            color: Colors.white,
-            text:
-                'Distance Today: ${param.distanceToday.toStringAsFixed(2)} km'),
-      ),
     );
   }
 }
