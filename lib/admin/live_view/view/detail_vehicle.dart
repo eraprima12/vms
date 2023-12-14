@@ -9,13 +9,14 @@ import 'package:vms/admin/live_view/widget/chart.dart';
 import 'package:vms/admin/live_view/widget/custom_marker.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/auth/model/driver_model.dart';
+import 'package:vms/auth/model/user_model.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/global/function/status_color.dart';
 import 'package:vms/global/widget/widgettext.dart';
 
 class DetailVehiclePage extends StatefulWidget {
-  DetailVehiclePage({Key? key, required this.licensePlate}) : super(key: key);
-  String licensePlate;
+  DetailVehiclePage({Key? key, required this.uid}) : super(key: key);
+  String uid;
 
   @override
   State<DetailVehiclePage> createState() => _DetailVehiclePageState();
@@ -23,11 +24,15 @@ class DetailVehiclePage extends StatefulWidget {
 
 class _DetailVehiclePageState extends State<DetailVehiclePage> {
   double drawerHeight = 0.3;
-  late DriverModel data;
+  late User data;
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback(
-      (_) {},
+      (_) async {
+        await Provider.of<DriversController>(context, listen: false)
+            .getAndMapDriverData();
+        setState(() {});
+      },
     );
 
     super.initState();
@@ -36,9 +41,8 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
   @override
   Widget build(BuildContext context) {
     var provider = Provider.of<DriversController>(context);
-    data = provider.driverData
-        .where((element) => element.licensePlate == widget.licensePlate)
-        .first;
+    data =
+        provider.driverData.where((element) => element.uid == widget.uid).first;
     return Scaffold(
       bottomNavigationBar: Container(
         height: 80,
@@ -50,7 +54,10 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
           },
           child: GestureDetector(
             onTap: () {
-              pageMover.push(widget: const TripHistory());
+              pageMover.push(
+                  widget: TripHistory(
+                uid: widget.uid,
+              ));
             },
             child: Container(
               decoration: BoxDecoration(
@@ -100,8 +107,8 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                 maxZoom: 20,
                 minZoom: 4,
                 initialCenter: LatLng(
-                  data.latestPosition.latitude,
-                  data.latestPosition.longitude,
+                  data.position[0].geopoint.latitude,
+                  data.position[0].geopoint.longitude,
                 ),
               ),
               children: [
@@ -115,19 +122,21 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                     Marker(
                       width: 100.0,
                       height: 80.0,
-                      point: LatLng(data.latestPosition.latitude,
-                          data.latestPosition.longitude),
+                      point: LatLng(
+                        data.position[0].geopoint.latitude,
+                        data.position[0].geopoint.longitude,
+                      ),
                       child: GestureDetector(
                         onTap: () {
                           pageMover.push(
                             widget: DetailVehiclePage(
-                              licensePlate: data.licensePlate,
+                              uid: data.uid,
                             ),
                           );
                         },
                         child: CustomMarker(
-                            licensePlate: data.licensePlate,
-                            status: data.status),
+                            licensePlate: data.vehicle!.licensePlate,
+                            status: data.isOnline),
                       ),
                     ),
                   ],
@@ -208,7 +217,8 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     WidgetText(
-                                      text: data.licensePlate.toUpperCase(),
+                                      text: data.vehicle!.licensePlate
+                                          .toUpperCase(),
                                       fontWeight: FontWeight.bold,
                                       fontSize: 26,
                                       color: Colors.grey[700],
@@ -230,11 +240,11 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                                         offset: const Offset(0, 2),
                                         blurRadius: 5,
                                         spreadRadius: 1,
-                                        color: getStatusColor(data.status),
+                                        color: getStatusColor(data.isOnline),
                                       )
                                     ],
                                     borderRadius: BorderRadius.circular(50),
-                                    color: getStatusColor(data.status),
+                                    color: getStatusColor(data.isOnline),
                                   ),
                                   child: Container(
                                     height: 80,
@@ -255,7 +265,8 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                                         : Icon(
                                             Icons.person_outlined,
                                             size: 60,
-                                            color: getStatusColor(data.status),
+                                            color:
+                                                getStatusColor(data.isOnline),
                                           ),
                                   ),
                                 )
@@ -325,36 +336,6 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                                       ),
                                     ],
                                   ),
-                                  Container(
-                                    height: 50,
-                                    width: 1,
-                                    color: Colors.grey[500],
-                                  ),
-                                  Column(
-                                    children: [
-                                      const WidgetText(
-                                        text: '80%',
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                      Row(
-                                        children: [
-                                          WidgetText(
-                                            text: 'Fuel',
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
-                                          ),
-                                          const SizedBox(
-                                            width: 5,
-                                          ),
-                                          Icon(
-                                            Icons.gas_meter_outlined,
-                                            color: Colors.grey[600],
-                                          )
-                                        ],
-                                      ),
-                                    ],
-                                  ),
                                 ],
                               ),
                             ),
@@ -397,33 +378,12 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   WidgetText(
-                                    text: 'Next service in',
+                                    text: 'Last service ODO',
                                     fontSize: 14,
                                     color: Colors.grey[600],
                                   ),
                                   const WidgetText(
-                                    text: '20 KM',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            SizedBox(
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  WidgetText(
-                                    text: 'Next service in',
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
-                                  const WidgetText(
-                                    text: '20 KM',
+                                    text: '18000 KM',
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                   ),
@@ -444,10 +404,12 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                             ),
                             FlChartWidget(
                               flSpots: provider
-                                  .getDriverStatistic(widget.licensePlate)
+                                  .getDriverStatistic(
+                                      data.vehicle!.licensePlate)
                                   .$1,
                               bottomTitles: provider
-                                  .getDriverStatistic(widget.licensePlate)
+                                  .getDriverStatistic(
+                                      data.vehicle!.licensePlate)
                                   .$2,
                             )
                           ],

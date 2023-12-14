@@ -6,12 +6,16 @@ generatePosition(uid) async {
   GeoPoint position = generateRandomGeoPoint();
 
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-  CollectionReference driverCollection = firestore.collection('driver');
+  CollectionReference driverCollection = firestore.collection('user');
 
   CollectionReference positionCollection =
       driverCollection.doc(uid).collection('position');
-  DocumentReference positionDocRef =
-      positionCollection.doc(generateRandomString(length: 10));
-  await positionDocRef
-      .set({'geopoint': position, 'dateTime': Timestamp.now(), 'speed': 80});
+  var uids = generateRandomString(length: 10);
+  DocumentReference positionDocRef = positionCollection.doc(uids);
+  await positionDocRef.set({
+    'geopoint': position,
+    'created_at': Timestamp.now(),
+    'speed': 80,
+    'uid': uids
+  });
 }

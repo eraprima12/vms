@@ -9,7 +9,8 @@ var primaryColor = const Color.fromARGB(255, 98, 98, 230);
 var secondaryColor = const Color.fromARGB(255, 249, 91, 91);
 var thirdColor = const Color(0xFF29ADB2);
 const fourthColor = Color.fromARGB(255, 255, 162, 0);
-Color? textColor = Colors.grey[700];
+Color textColor = Colors.grey[700]!;
+var splashLink = '';
 var logger = Logger();
 var height = 0.0;
 var width = 0.0;
@@ -18,11 +19,13 @@ final navigatorKey = GlobalKey<NavigatorState>();
 final localStorage = GetStorage();
 PopupHandler popupHandler = PopupHandler();
 var tokenKey = 'token';
-var isDriverKey = 'isDriver';
+var driverKey = 'driver';
 var offlineStatus = 'offline';
 var onlineStatus = 'online';
 var parkingStatus = 'parking';
 var uidKey = 'uid';
+
+var companyUidKey = 'companyUid';
 var usernameKey = 'username';
 
 var mbId = 'mapbox.mapbox-streets-v8';

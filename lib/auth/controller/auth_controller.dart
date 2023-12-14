@@ -2,6 +2,9 @@
 
 import 'dart:async';
 
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
@@ -10,17 +13,17 @@ import 'package:vms/admin/menu/view/menu.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/auth/controller/fcm_token_listener.dart';
 import 'package:vms/auth/model/driver_model.dart';
+import 'package:vms/auth/model/master_model.dart';
 import 'package:vms/auth/model/user_model.dart';
 import 'package:vms/auth/view/auth_page.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/driver/home/view/home.dart';
 import 'package:vms/global/function/local_storage_handler.dart';
+import 'package:vms/global/model/hexcolor.dart';
 import 'package:vms/global/widget/popup_handler.dart';
 
 class AuthController extends ChangeNotifier {
-  UserModel? user =
-      UserModel(uid: '', username: '', password: '', fcmToken: '');
-  DriverModel? userDriver;
+  User? user;
   var popupHandler = PopupHandler();
   var context = navigatorKey.currentContext!;
   final formKey = GlobalKey<FormState>();
@@ -35,42 +38,110 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  getMasterSettings() async {
+  bool _loadingMaster = false;
+  bool get loadingMaster => _loadingMaster;
+  set loadingMaster(bool value) {
+    _loadingMaster = value;
+    notifyListeners();
+  }
+
+  Future<Company?> getMasterSettings({required String uid}) async {
     try {
-      DocumentSnapshot snapshot = await FirebaseFirestore.instance
-          .collection('master')
-          .doc('master')
-          .get();
+      loadingMaster = true;
+      DocumentSnapshot snapshot =
+          await FirebaseFirestore.instance.collection('company').doc(uid).get();
 
       if (snapshot.exists) {
         Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-        var provider = Provider.of<DriversController>(context, listen: false);
-        logger.f(data);
-        DriverModel driver = DriverModel.fromMap(data);
-        var positionData = await provider.getPosition(uid: driver.uid);
-        driver.position = positionData[0];
-        driver.totalDistance = provider.calculateTotalDistance(positionData[1]);
-        return driver;
+        Company master = Company.fromJson(data);
+        primaryColor = master.primaryColor != ''
+            ? HexColor.fromHex(master.primaryColor!)
+            : primaryColor;
+
+        secondaryColor = master.secondaryColor != ''
+            ? HexColor.fromHex(master.secondaryColor!)
+            : secondaryColor;
+
+        thirdColor = master.thirdColor != ''
+            ? HexColor.fromHex(master.thirdColor!)
+            : thirdColor;
+
+        splashLink = master.splashScreen!;
+        loadingMaster = false;
+        return master;
       } else {
-        throw 'Error while getting user';
+        loadingMaster = false;
+        throw 'Error while getting master';
       }
     } catch (e) {
       popupHandler.showErrorPopup(e.toString());
+      return null;
     }
-    return null;
   }
 
-  logout() {
-    localStorage.erase();
+  Future<void> saveMasterDataToFirestore(Company formData, File? file) async {
+    loadingMaster = true;
+    try {
+      if (file != null) {
+        var url = await uploadFileToFirebaseStorage(file);
+        formData.splashScreen = url;
+      }
+      FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+      String? companyUid = localStorage.read(companyUidKey) ?? '';
+      DocumentReference masterDataCollection =
+          firestore.collection('company').doc(companyUid);
+
+      Map<String, dynamic> formDataMap = formData.toJson();
+
+      await masterDataCollection.update(formDataMap);
+      primaryColor = HexColor.fromHex(formData.primaryColor!);
+
+      secondaryColor = HexColor.fromHex(formData.secondaryColor!);
+
+      thirdColor = HexColor.fromHex(formData.thirdColor!);
+      pageMover.pop();
+      popupHandler.showSuccessPopup('Saving Master');
+      loadingMaster = false;
+      notifyListeners();
+    } catch (error) {
+      loadingMaster = false;
+      popupHandler.showErrorPopup('Error Saving Master Data!');
+    }
+  }
+
+  Future<String> uploadFileToFirebaseStorage(File file) async {
+    try {
+      Reference storageReference = FirebaseStorage.instance.ref().child(
+          'splash/${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}');
+      UploadTask uploadTask = storageReference.putFile(file);
+      TaskSnapshot taskSnapshot = await uploadTask.whenComplete(() {});
+      String downloadURL = await taskSnapshot.ref.getDownloadURL();
+      return downloadURL;
+    } catch (error) {
+      throw 'Error when uploading Master data';
+    }
+  }
+
+  void main() async {
+    File file = File(
+        'path/to/your/file.jpg'); // Replace with the actual path to your file
+    String downloadURL = await uploadFileToFirebaseStorage(file);
+
+    if (downloadURL.isNotEmpty) {
+      print('File uploaded successfully. Download URL: $downloadURL');
+    } else {
+      print('Failed to upload file.');
+    }
+  }
+
+  logout() async {
+    await localStorage.erase();
     pageMover.pushAndRemove(widget: const LoginPage());
   }
 
   getAndSetUserDetail({required String uid}) async {
-    if (!getIsDriver()) {
-      user = await getUserDetails(uid: uid);
-    } else {
-      userDriver = await getDriverDetails(uid: uid);
-    }
+    user = await getUserDetails(uid: uid);
   }
 
   initListener() async {
@@ -78,52 +149,21 @@ class AuthController extends ChangeNotifier {
     getAndSetUserDetail(uid: uid);
     FCMTokenChangeListener tokenListener = FCMTokenChangeListener(
       uid: uid,
-      currentToken: user!.fcmToken,
+      currentToken: user!.token,
     );
     tokenListener.startListening();
   }
 
-  Future<DriverModel?> getDriverDetails({required String uid}) async {
+  Future<User?> getUserDetails({required String uid}) async {
     try {
       DocumentSnapshot snapshot =
-          await FirebaseFirestore.instance.collection('driver').doc(uid).get();
+          await FirebaseFirestore.instance.collection('user').doc(uid).get();
 
       if (snapshot.exists) {
         Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-        var provider = Provider.of<DriversController>(context, listen: false);
-        logger.f(data);
-        DriverModel driver = DriverModel.fromMap(data);
-        var positionData = await provider.getPosition(uid: driver.uid);
-        driver.position = positionData[0];
-        driver.totalDistance = provider.calculateTotalDistance(positionData[1]);
-        return driver;
-      } else {
-        throw 'Error while getting user';
-      }
-    } catch (e) {
-      popupHandler.showErrorPopup(e.toString());
-    }
-    return null;
-  }
+        User user = User.fromJson(data);
 
-  Future<UserModel?> getUserDetails({required String uid}) async {
-    try {
-      DocumentSnapshot snapshot =
-          await FirebaseFirestore.instance.collection('admin').doc(uid).get();
-
-      if (snapshot.exists) {
-        Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-        String username = data['username'];
-        String password = data['password'];
-        String fcmToken = data['fcmToken'];
-        UserModel userModel = UserModel(
-          uid: uid,
-          username: username,
-          password: password,
-          fcmToken: fcmToken,
-        );
-
-        return userModel;
+        return user;
       } else {
         throw 'Error while getting user';
       }
@@ -137,36 +177,25 @@ class AuthController extends ChangeNotifier {
     try {
       loadingLogin = true;
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('admin')
+          .collection('user')
           .where('username', isEqualTo: usernameController.text)
           .limit(1)
           .get();
-
-      if (querySnapshot.docs.isEmpty) {
-        querySnapshot = await FirebaseFirestore.instance
-            .collection('driver')
-            .where('username', isEqualTo: usernameController.text)
-            .limit(1)
-            .get();
-        putIsDriver(value: true);
-        if (querySnapshot.docs.isEmpty) {
-          putIsDriver(value: false);
-          loadingLogin = false;
-          throw 'Wrong username/password';
-        }
-      }
 
       DocumentSnapshot userDoc = querySnapshot.docs.first;
       String storedPassword = userDoc.get('password');
       String uid = userDoc.id;
       loadingLogin = false;
 
+      await getUserDetails(uid: uid);
+
       if (passwordController.text == storedPassword) {
         String currentToken = await updateToken(uid: uid);
         localStorage.write(tokenKey, currentToken);
         localStorage.write(uidKey, uid);
+        localStorage.write(companyUidKey, user!.companyUid);
         pageMover.pushAndRemove(
-            widget: getIsDriver()
+            widget: user!.type == driverKey
                 ? const HomeDriver()
                 : const TabBarBottomNavPage());
       } else {
@@ -184,9 +213,9 @@ class AuthController extends ChangeNotifier {
     try {
       String fcmToken = await FirebaseMessaging.instance.getToken() ?? '';
       await FirebaseFirestore.instance
-          .collection(!getIsDriver() ? 'admin' : 'driver')
+          .collection('user')
           .doc(uid)
-          .update({'fcmToken': fcmToken}).onError(
+          .update({'token': fcmToken}).onError(
               (error, stackTrace) => throw 'Credential Failure');
       return fcmToken;
     } catch (e) {

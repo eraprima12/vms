@@ -1,9 +1,17 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:provider/provider.dart';
+import 'package:vms/auth/controller/auth_controller.dart';
+import 'package:vms/auth/model/master_model.dart';
 import 'package:vms/constant.dart';
+import 'package:vms/global/model/hexcolor.dart';
+import 'package:vms/global/widget/widgettext.dart';
 
 class MasterSettings extends StatefulWidget {
   const MasterSettings({super.key});
@@ -13,10 +21,12 @@ class MasterSettings extends StatefulWidget {
 }
 
 class _MasterSettingsState extends State<MasterSettings> {
-  int? _maxSpeed;
-  int? _minDistancePerDay;
-  int? _servicePerKM;
   File? _splashScreenImage;
+  var _primaryColor = primaryColor;
+
+  var _secondaryColor = secondaryColor;
+
+  var _thirdColor = thirdColor;
 
   void _pickImage() async {
     final picker = ImagePicker();
@@ -59,35 +69,13 @@ class _MasterSettingsState extends State<MasterSettings> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flutter Color and Image Picker'),
+        title: const Text('Preferensi Tampilan'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              decoration: const InputDecoration(labelText: 'Max Speed'),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                _maxSpeed = int.tryParse(value);
-              },
-            ),
-            TextField(
-              decoration:
-                  const InputDecoration(labelText: 'Min Distance Per Day'),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                _minDistancePerDay = int.tryParse(value);
-              },
-            ),
-            TextField(
-              decoration: const InputDecoration(labelText: 'Service Per KM'),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                _servicePerKM = int.tryParse(value);
-              },
-            ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -95,16 +83,16 @@ class _MasterSettingsState extends State<MasterSettings> {
                 const Text('Primary Color:'),
                 GestureDetector(
                   onTap: () {
-                    _selectColor(primaryColor, (color) {
+                    _selectColor(_primaryColor, (color) {
                       setState(() {
-                        primaryColor = color;
+                        _primaryColor = color;
                       });
                     });
                   },
                   child: Container(
                     width: 30,
                     height: 30,
-                    color: primaryColor,
+                    color: _primaryColor,
                   ),
                 ),
               ],
@@ -116,16 +104,16 @@ class _MasterSettingsState extends State<MasterSettings> {
                 const Text('Secondary Color:'),
                 GestureDetector(
                   onTap: () {
-                    _selectColor(secondaryColor, (color) {
+                    _selectColor(_secondaryColor, (color) {
                       setState(() {
-                        secondaryColor = color;
+                        _secondaryColor = color;
                       });
                     });
                   },
                   child: Container(
                     width: 30,
                     height: 30,
-                    color: secondaryColor,
+                    color: _secondaryColor,
                   ),
                 ),
               ],
@@ -137,42 +125,64 @@ class _MasterSettingsState extends State<MasterSettings> {
                 const Text('Third Color:'),
                 GestureDetector(
                   onTap: () {
-                    _selectColor(thirdColor, (color) {
+                    _selectColor(_thirdColor, (color) {
                       setState(() {
-                        thirdColor = color;
+                        _thirdColor = color;
                       });
                     });
                   },
                   child: Container(
                     width: 30,
                     height: 30,
-                    color: thirdColor,
+                    color: _thirdColor,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
+            const WidgetText(text: 'Splash Screen Image'),
+            const SizedBox(height: 16),
             GestureDetector(
               onTap: _pickImage,
               child: _splashScreenImage != null
-                  ? Image.file(_splashScreenImage!)
-                  : const Icon(
-                      Icons.camera,
-                      size: 50,
-                    ),
+                  ? Image.file(
+                      _splashScreenImage!,
+                      height: 200,
+                      width: 200,
+                      fit: BoxFit.contain,
+                    )
+                  : splashLink != ''
+                      ? CachedNetworkImage(
+                          imageUrl: splashLink,
+                          height: 200,
+                          errorWidget: (context, error, _) {
+                            return const CupertinoActivityIndicator();
+                          },
+                          width: 200,
+                          cacheManager: CacheManager(
+                            Config(
+                              "splash",
+                              stalePeriod: const Duration(days: 7),
+                              //one week cache period
+                            ),
+                          ),
+                        )
+                      : const Icon(
+                          Icons.camera,
+                          size: 50,
+                        ),
             ),
-            const SizedBox(height: 16),
+            const Spacer(),
             ElevatedButton(
               onPressed: () {
-                // Use _maxSpeed, _minDistancePerDay, _servicePerKM,
-                // _primaryColor, _secondaryColor, _thirdColor, _splashScreenImage
-                print('Max Speed: $_maxSpeed');
-                print('Min Distance Per Day: $_minDistancePerDay');
-                print('Service Per KM: $_servicePerKM');
-                print('Primary Color: $primaryColor');
-                print('Secondary Color: $secondaryColor');
-                print('Third Color: $thirdColor');
-                print('Splash Screen Image Path: ${_splashScreenImage?.path}');
+                Provider.of<AuthController>(context, listen: false)
+                    .saveMasterDataToFirestore(
+                        Company(
+                          primaryColor: _primaryColor.toHex(),
+                          secondaryColor: _secondaryColor.toHex(),
+                          thirdColor: _thirdColor.toHex(),
+                        ),
+                        _splashScreenImage);
               },
               child: const Text('Submit'),
             ),

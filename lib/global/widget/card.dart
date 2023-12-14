@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vms/admin/home/widget/card_widget.dart';
 import 'package:vms/auth/model/driver_model.dart';
+import 'package:vms/auth/model/user_model.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/global/widget/widgettext.dart';
 
@@ -54,7 +55,7 @@ class CardWithAvatar extends StatelessWidget {
     required this.param,
   });
 
-  final DriverModel param;
+  final User param;
 
   @override
   Widget build(BuildContext context) {

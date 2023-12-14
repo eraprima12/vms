@@ -21,12 +21,12 @@ class FCMTokenChangeListener {
   // Start listening to token changes
   void startListening() {
     _subscription = FirebaseFirestore.instance
-        .collection('admin')
+        .collection('user')
         .doc(uid)
         .snapshots()
         .listen((DocumentSnapshot snapshot) {
       if (snapshot.exists) {
-        String? fcmToken = snapshot.get('fcmToken');
+        String? fcmToken = snapshot.get('token');
         log(jsonEncode('listening brok...'));
         if (fcmToken != currentToken) {
           stopListening();

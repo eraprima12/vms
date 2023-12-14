@@ -27,29 +27,27 @@ class DriverProfilePage extends StatelessWidget {
               width: 150,
               child: CircleAvatar(
                 backgroundColor: Colors.white,
-                child: provider.userDriver!.avatar != ''
+                child: provider.user!.avatar != ''
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(100),
                         child: Image.network(
                           height: 150,
                           width: 150,
-                          provider.userDriver!.avatar,
+                          provider.user!.avatar,
                           fit: BoxFit.cover,
                         ),
                       )
                     : WidgetText(
-                        text: provider.userDriver!.name
-                            .substring(0, 1)
-                            .toUpperCase(),
+                        text: provider.user!.name.substring(0, 1).toUpperCase(),
                         color: secondaryColor,
                         fontWeight: FontWeight.bold,
                       ),
               ),
             ),
             const SizedBox(height: 20),
-            WidgetText(text: 'Username : ${provider.userDriver!.username}'),
+            WidgetText(text: 'Username : ${provider.user!.username}'),
             const SizedBox(height: 20),
-            WidgetText(text: 'Name : ${provider.userDriver!.name}'),
+            WidgetText(text: 'Name : ${provider.user!.name}'),
             const Spacer(),
             GestureDetector(
               onTap: () {

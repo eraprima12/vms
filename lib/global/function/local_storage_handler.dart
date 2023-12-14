@@ -5,5 +5,5 @@ bool getIsDriver() {
 }
 
 void putIsDriver({required bool value}) {
-  localStorage.write(isDriverKey, value);
+  localStorage.write(driverKey, value);
 }

@@ -22,27 +22,24 @@ Future<void> generateAndStoreData(name, username) async {
   // Create document for position collection
 
   // Update driver document with UID
-  CollectionReference driverCollection = firestore.collection('driver');
+  CollectionReference driverCollection = firestore.collection('user');
   DocumentReference driverDocRef = driverCollection.doc(uid);
 
   // Get FCM token
   String fcmToken = await messaging.getToken() ?? '';
 
   // Set data in the driver collection
-  await driverDocRef.set({
-    'uid': uid,
-    'name': name,
-    'password': '123456',
-    'username': username,
-    'fcmToken': fcmToken,
+  await firestore.collection('user').doc(uid).set({
     'avatar': '',
-    'odometer': 100,
-    'lastServiceOdo': 0,
-    'status': getRandomStatus(),
-    'licensePlate':
-        'L ${Random().nextInt(9999) + 1} ${generateRandomString(length: 3)}',
-    'latestPosition': position,
-    // Add any other fields you need
+    'company_uid': '9CiTjte8yjee5CxHuLHg',
+    'created_at': Timestamp.now(),
+    'is_online': true,
+    'password': '123456',
+    'token': '',
+    'type': 'driver',
+    'uid': uid,
+    'username': username,
+    'vehicle_uid': 'vA56X7qO4iQR9jCuzpgU',
   }).then((value) async {
     CollectionReference positionCollection =
         driverCollection.doc(uid).collection('position');

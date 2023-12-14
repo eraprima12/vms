@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronous, use_build_context_synchronously
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:lottie/lottie.dart';
@@ -9,11 +10,13 @@ import 'package:vms/admin/menu/view/menu.dart';
 import 'package:vms/auth/controller/auth_controller.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/auth/view/auth_page.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/driver/home/view/home.dart';
 import 'package:vms/gen/assets.gen.dart';
 import 'package:vms/global/function/local_storage_handler.dart';
 import 'package:vms/global/widget/widgettext.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,15 +68,22 @@ class _SplashscreenState extends State<Splashscreen> {
       (_) async {
         String? token = localStorage.read(tokenKey);
         String? uid = localStorage.read(uidKey) ?? '';
+        String? companyUid = localStorage.read(companyUidKey) ?? '';
         if (token != null) {
           await Provider.of<AuthController>(context, listen: false)
-              .getAndSetUserDetail(uid: uid);
-          await Provider.of<DriversController>(context, listen: false)
-              .getAndMapDriverData();
-          pageMover.pushAndRemove(
-              widget: getIsDriver()
-                  ? const HomeDriver()
-                  : const TabBarBottomNavPage());
+              .getMasterSettings(uid: companyUid);
+          setState(() {});
+          Future.delayed(const Duration(milliseconds: 2000))
+              .then((value) async {
+            await Provider.of<AuthController>(context, listen: false)
+                .getAndSetUserDetail(uid: uid);
+            await Provider.of<DriversController>(context, listen: false)
+                .getAndMapDriverData();
+            pageMover.pushAndRemove(
+                widget: getIsDriver()
+                    ? const HomeDriver()
+                    : const TabBarBottomNavPage());
+          });
         } else {
           Future.delayed(const Duration(milliseconds: 500)).then(
             (value) => pageMover.pushAndRemove(widget: const LoginPage()),
@@ -101,14 +111,32 @@ class _SplashscreenState extends State<Splashscreen> {
               SizedBox(
                 height: 150,
                 width: 150,
-                child: Lottie.asset(Assets.splash),
+                child: splashLink != ''
+                    ? CachedNetworkImage(
+                        imageUrl: splashLink,
+                        height: 60,
+                        errorWidget: (context, error, _) {
+                          return const CupertinoActivityIndicator();
+                        },
+                        width: 130,
+                        cacheManager: CacheManager(
+                          Config(
+                            "splash",
+                            stalePeriod: const Duration(days: 7),
+                            //one week cache period
+                          ),
+                        ),
+                      )
+                    : Lottie.asset(Assets.splash),
               ),
-              WidgetText(
-                text: 'VMS',
-                color: primaryColor,
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-              )
+              splashLink != ''
+                  ? WidgetText(
+                      text: 'VMS',
+                      color: primaryColor,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                    )
+                  : const SizedBox()
             ],
           ),
         ),

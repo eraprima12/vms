@@ -8,6 +8,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:vms/auth/model/driver_model.dart';
+import 'package:vms/auth/model/user_model.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/global/function/date_function.dart';
 
@@ -26,23 +27,23 @@ class DriversController extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<DriverModel> _driverData = [];
-  List<DriverModel> get driverData => _driverData;
-  set driverData(List<DriverModel> value) {
+  List<User> _driverData = [];
+  List<User> get driverData => _driverData;
+  set driverData(List<User> value) {
     _driverData = value;
     notifyListeners();
   }
 
-  List<DriverModel> _highestDriverData = [];
-  List<DriverModel> get highestDriverData => _highestDriverData;
-  set highestDriverData(List<DriverModel> value) {
+  List<User> _highestDriverData = [];
+  List<User> get highestDriverData => _highestDriverData;
+  set highestDriverData(List<User> value) {
     _highestDriverData = value;
     notifyListeners();
   }
 
-  List<DriverModel> _lowestDriverData = [];
-  List<DriverModel> get lowestDriverData => _lowestDriverData;
-  set lowestDriverData(List<DriverModel> value) {
+  List<User> _lowestDriverData = [];
+  List<User> get lowestDriverData => _lowestDriverData;
+  set lowestDriverData(List<User> value) {
     _lowestDriverData = value;
     notifyListeners();
   }
@@ -104,43 +105,72 @@ class DriversController extends ChangeNotifier {
       List<LatLng> latlngList = [];
       List<LatLng> latlngListToday = [];
       var positionCollection = await FirebaseFirestore.instance
-          .collection('driver')
+          .collection('user')
           .doc(uid)
           .collection('position')
           .get();
-      positionCollection.docs.map(
-        (e) {
-          var data = e.data();
-          PositionModel position = PositionModel.fromMap(data);
-          latlngList.add(
-            LatLng(position.geopoint.latitude, position.geopoint.longitude),
-          );
-          if (isWithinCurrentDay(position.dateTime)) {
-            latlngListToday.add(
+      if (positionCollection.docs.isNotEmpty) {
+        positionCollection.docs.map(
+          (e) {
+            var data = e.data();
+            PositionModel position = PositionModel.fromMap(data);
+            latlngList.add(
               LatLng(position.geopoint.latitude, position.geopoint.longitude),
             );
-          }
-          res.add(position);
-        },
-      ).toList();
+            if (isWithinCurrentDay(position.dateTime)) {
+              latlngListToday.add(
+                LatLng(position.geopoint.latitude, position.geopoint.longitude),
+              );
+            }
+            res.add(position);
+          },
+        ).toList();
+      }
       return {0: res, 1: latlngList, 2: latlngListToday};
     } catch (e) {
       return {0: [], 1: [], 2: []};
     }
   }
 
-  getAndMapDriverData() async {
-    loadingGetUser = true;
-    var driverList = await getDriverData();
+  List<Timestamp> separatePositionsByDateTime(List<PositionModel> positions) {
+    final Map<DateTime, Timestamp> separatedMap = {};
 
-    highestDriverData = List.from(driverList);
-    lowestDriverData = List.from(driverList);
-    lowestDriverData.sort((a, b) => a.distanceToday.compareTo(b.distanceToday));
-    highestDriverData
-        .sort((a, b) => b.distanceToday.compareTo(a.distanceToday));
-    driverData = List.from(driverList);
-    loadingGetUser = false;
-    return driverData;
+    for (final position in positions) {
+      final dateTimeKey = DateTime(
+        position.dateTime.year,
+        position.dateTime.month,
+        position.dateTime.day,
+      );
+
+      if (!separatedMap.containsKey(dateTimeKey)) {
+        separatedMap[dateTimeKey] = Timestamp.fromDate(dateTimeKey);
+      }
+    }
+
+    return separatedMap.values.toList();
+  }
+
+  getAndMapDriverData() async {
+    try {
+      loadingGetUser = true;
+      var driverList = await getDriverData();
+      highestDriverData = List.from(driverList);
+      lowestDriverData = List.from(driverList);
+      logger.f('asd ${highestDriverData.length}');
+      if (driverList.length > 1) {
+        lowestDriverData
+            .sort((a, b) => a.distanceToday.compareTo(b.distanceToday));
+        highestDriverData
+            .sort((a, b) => b.distanceToday.compareTo(a.distanceToday));
+      } else {
+        logger.f('asd');
+      }
+      driverData = List.from(driverList);
+      loadingGetUser = false;
+      return driverData;
+    } catch (e) {
+      logger.f(e);
+    }
   }
 
   getDriverStatistic(String licensePlate) {
@@ -188,25 +218,44 @@ class DriversController extends ChangeNotifier {
     );
   }
 
-  Future<List<DriverModel>> getDriverData() async {
+  Future<Vehicle> getVehicle({required String uid}) async {
+    DocumentSnapshot<Object?> vehicleCollection =
+        await FirebaseFirestore.instance.collection('vehicle').doc(uid).get();
+    Map<String, dynamic> data =
+        vehicleCollection.data() as Map<String, dynamic>;
+    Vehicle vehicle = Vehicle.fromJson(data);
+    return vehicle;
+  }
+
+  Future<List<User>> getDriverData() async {
     try {
-      QuerySnapshot<Object?> driversCollection =
-          await FirebaseFirestore.instance.collection('driver').get();
-      List<DriverModel> driverList = [];
+      String? companyUid = localStorage.read(companyUidKey) ?? '';
+      QuerySnapshot<Object?> driversCollection = await FirebaseFirestore
+          .instance
+          .collection('user')
+          .where('type', isEqualTo: driverKey)
+          .where('company_uid', isEqualTo: companyUid)
+          .get();
+      List<User> driverList = [];
       latlnglist = [];
       await Future.wait(driversCollection.docs.map((doc) async {
         var data = doc.data() as Map<String, dynamic>;
-        DriverModel driver = DriverModel.fromMap(data);
+        User driver = User.fromJson(data);
+        logger.f(driver.name);
         var positionData = await getPosition(uid: driver.uid);
-        latlnglist.add(LatLng(
-            driver.latestPosition.latitude, driver.latestPosition.longitude));
+        var vehicleData = await getVehicle(uid: driver.vehicleUid);
         driver.position = positionData[0];
+        driver.position.sort((a, b) => b.dateTime.compareTo(a.dateTime));
         driver.totalDistance = calculateTotalDistance(positionData[1]);
         driver.distanceToday = calculateTotalDistance(positionData[2]);
+        driver.vehicle = vehicleData;
+        driver.tripHistory = separatePositionsByDateTime(positionData[0]);
         driverList.add(driver);
       }).toList());
+      logger.f('asd driver list ${driverList.length}');
       return driverList;
     } catch (e) {
+      logger.f(e);
       return [];
     }
   }

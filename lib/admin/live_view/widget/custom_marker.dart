@@ -10,7 +10,7 @@ import 'package:vms/global/widget/widgettext.dart';
 
 class CustomMarker extends StatelessWidget {
   final String licensePlate;
-  final String status;
+  final bool status;
 
   const CustomMarker(
       {super.key, required this.licensePlate, required this.status});
