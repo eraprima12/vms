@@ -4,8 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:vms/auth/controller/auth_controller.dart';
 import 'package:vms/auth/model/master_model.dart';
@@ -69,7 +69,7 @@ class _MasterSettingsState extends State<MasterSettings> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Preferensi Tampilan'),
+        title: const Text('User Interface Preference'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

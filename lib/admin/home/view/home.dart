@@ -35,8 +35,8 @@ class _HomePageState extends State<HomePage> {
     var provider = Provider.of<DriversController>(context);
     var unlistenedProvider =
         Provider.of<DriversController>(context, listen: false);
-    // var length =
-    //     provider.driverData.length < 3 ? provider.driverData.length : 3;
+    var length =
+        provider.driverData.length < 3 ? provider.driverData.length : 3;
     var homeProvider = Provider.of<HomeController>(context);
     var unlistenedHomeProvider =
         Provider.of<HomeController>(context, listen: false);
@@ -65,7 +65,6 @@ class _HomePageState extends State<HomePage> {
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             child: GestureDetector(
                               onTap: () {
-                                logger.f('kegenerate');
                                 generatePosition('anMynBTq4C');
                                 // List<Map<String, String>> animeCharactersData =
                                 //     generateAnimeCharactersData(1);
@@ -288,7 +287,7 @@ class _HomePageState extends State<HomePage> {
                                                       ),
                                                       WidgetText(
                                                         text:
-                                                            '${provider.highestDriverData.first.distanceToday} KM',
+                                                            '${provider.highestDriverData.first.distanceToday.toStringAsFixed(2)} KM',
                                                         color: Colors.white,
                                                         fontWeight:
                                                             FontWeight.bold,
@@ -425,99 +424,101 @@ class _HomePageState extends State<HomePage> {
                                         CardWithTitleAndSubtitle(
                                           color: primaryColor.withOpacity(0.6),
                                           title: 'Vehicle Service',
-                                          data: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              const SizedBox(
-                                                height: 40,
-                                              ),
-                                              for (int i = 0; i < 0; i++)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                    top: 8,
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment.start,
-                                                    children: [
-                                                      CircleAvatar(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        child: provider
-                                                                    .driverData[
-                                                                        i]
-                                                                    .avatar !=
-                                                                ''
-                                                            ? ClipRRect(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                  50,
-                                                                ),
-                                                                child: Image
-                                                                    .network(
-                                                                  provider
+                                          data: Expanded(
+                                            child: ListView(
+                                              children: [
+                                                const SizedBox(
+                                                  height: 40,
+                                                ),
+                                                for (int i = 0; i < length; i++)
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                      top: 8,
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        CircleAvatar(
+                                                          backgroundColor:
+                                                              Colors.white,
+                                                          child: provider
                                                                       .driverData[
                                                                           i]
-                                                                      .avatar,
-                                                                  height: 50,
-                                                                  width: 50,
-                                                                  fit: BoxFit
-                                                                      .cover,
+                                                                      .avatar !=
+                                                                  ''
+                                                              ? ClipRRect(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                    50,
+                                                                  ),
+                                                                  child: Image
+                                                                      .network(
+                                                                    provider
+                                                                        .driverData[
+                                                                            i]
+                                                                        .avatar,
+                                                                    height: 50,
+                                                                    width: 50,
+                                                                    fit: BoxFit
+                                                                        .cover,
+                                                                  ),
+                                                                )
+                                                              : WidgetText(
+                                                                  text: provider
+                                                                      .driverData[
+                                                                          i]
+                                                                      .name
+                                                                      .substring(
+                                                                          0, 1)
+                                                                      .toUpperCase(),
+                                                                  color:
+                                                                      thirdColor,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
                                                                 ),
-                                                              )
-                                                            : WidgetText(
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 10,
+                                                        ),
+                                                        Expanded(
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              WidgetText(
                                                                 text: provider
                                                                     .driverData[
                                                                         i]
-                                                                    .name
-                                                                    .substring(
-                                                                        0, 1)
-                                                                    .toUpperCase(),
-                                                                color:
-                                                                    thirdColor,
+                                                                    .name,
+                                                                color: Colors
+                                                                    .white,
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .bold,
                                                               ),
-                                                      ),
-                                                      const SizedBox(
-                                                        width: 10,
-                                                      ),
-                                                      Expanded(
-                                                        child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            WidgetText(
-                                                              text: provider
-                                                                  .driverData[i]
-                                                                  .name,
-                                                              color:
-                                                                  Colors.white,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                            WidgetText(
-                                                              text:
-                                                                  '${provider.driverData[i].distanceToday} KM',
-                                                              color:
-                                                                  Colors.white,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      )
-                                                    ],
+                                                              WidgetText(
+                                                                text:
+                                                                    '${provider.driverData[i].nextServiceOdo} KM',
+                                                                color: Colors
+                                                                    .white,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        )
+                                                      ],
+                                                    ),
                                                   ),
-                                                ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ],

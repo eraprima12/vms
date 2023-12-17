@@ -69,14 +69,14 @@ class BGLocatorProvider extends ChangeNotifier {
   }
 
   sendToGetStorage(LocationDto? locationDto) {
-    totalData++;
-    if (!_checkOnly) {
-      if (locationDto != null) {
-        final box = GetStorage();
-        List bgLocationDto = jsonDecode(box.read(bgLocationKey) ?? '[]');
-        bgLocationDto.add(locationDto.toJson());
-        box.write(bgLocationKey, jsonEncode(bgLocationDto));
-      }
+    var mocked = locationDto!.isMocked;
+    if (!mocked) {
+      _updateNotificationText(false, mocked);
+      totalData++;
+      final box = GetStorage();
+      List bgLocationDto = jsonDecode(box.read(bgLocationKey) ?? '[]');
+      bgLocationDto.add(locationDto.toJson());
+      box.write(bgLocationKey, jsonEncode(bgLocationDto));
     }
   }
 
@@ -102,6 +102,7 @@ class BGLocatorProvider extends ChangeNotifier {
         geopoint: GeoPoint(data[i].latitude, data[i].longitude),
         speed: data[i].speed,
       );
+      listPosition.add(temp);
     }
     return listPosition;
   }
@@ -110,7 +111,6 @@ class BGLocatorProvider extends ChangeNotifier {
     try {
       var uid = localStorage.read(uidKey);
       var param = buildParam(uid);
-
       for (int i = 0; i < param.length; i++) {
         var positionUID = generateRandomString(length: 10);
         await FirebaseFirestore.instance
@@ -119,21 +119,33 @@ class BGLocatorProvider extends ChangeNotifier {
             .collection('position')
             .doc(positionUID)
             .set({
-          'created_at':
-              (param[i].dateTime.millisecondsSinceEpoch / 1000).round(),
+          'created_at': Timestamp.fromDate(param[i].dateTime),
           'geopoint': param[i].geopoint,
           'uid': positionUID,
           'speed': param[i].speed
         });
       }
-      _updateNotificationText(false);
+      var triggerID = generateRandomString(length: 10);
+      await FirebaseFirestore.instance
+          .collection('user')
+          .doc(uid)
+          .update({'trigger_id': triggerID});
       clearGetStorage();
     } catch (e) {
+      logger.f(e);
       return Future.error('Terjadi Kesalahan');
     }
   }
 
-  ///Di Comment karena fungsi berguna untuk next nya
+  updateIsOnline(bool isOnline) async {
+    var uid = localStorage.read(uidKey);
+    await FirebaseFirestore.instance
+        .collection('user')
+        .doc(uid)
+        .update({'is_online': isOnline});
+  }
+
+  ///Gak guna
   // Future postGPSSingle(LocationDto data, LoginModel dataLogin) async {
   //   try {
   //     sendToGetStorage(data);
@@ -157,21 +169,19 @@ class BGLocatorProvider extends ChangeNotifier {
   //   }
   // }
 
-  Future<void> _updateNotificationText(bool error) async {
-    // if (data.isMocked) {
-    //   isMocked = true;
-    //   await BackgroundLocator.updateNotificationText(
-    //       title: 'Mock Location terdeteksi',
-    //       msg: 'Anda menggunakan mock location',
-    //       bigMsg: 'Lokasi anda terdeteksi kecurangan');
-    // } else {
-    //   isMocked = false;
-    await BackgroundLocator.updateNotificationText(
-        title: error ? 'Lokasi Error' : 'Lokasi dikirim ke server',
-        msg: '${DateTime.now()}',
-        bigMsg:
-            error ? 'Terjadi Error' : 'Lokasi anda telah dikirim ke server');
-    // }
+  Future<void> _updateNotificationText(bool error, bool isMocked) async {
+    if (isMocked) {
+      await BackgroundLocator.updateNotificationText(
+          title: 'Mock Location terdeteksi',
+          msg: 'Anda menggunakan mock location',
+          bigMsg: 'Lokasi anda terdeteksi kecurangan');
+    } else {
+      await BackgroundLocator.updateNotificationText(
+          title: error ? 'Lokasi Error' : 'Lokasi dikirim ke server',
+          msg: '${DateTime.now()}',
+          bigMsg:
+              error ? 'Terjadi Error' : 'Lokasi anda telah dikirim ke server');
+    }
   }
 
   Future<void> onStop() async {
@@ -198,8 +208,8 @@ class BGLocatorProvider extends ChangeNotifier {
       autoStop: false,
       androidSettings: const AndroidSettings(
         accuracy: LocationAccuracy.NAVIGATION,
-        interval: 30,
-        distanceFilter: 10,
+        interval: 10,
+        distanceFilter: 0,
         wakeLockTime: 1440,
         client: LocationClient.google,
         androidNotificationSettings: AndroidNotificationSettings(

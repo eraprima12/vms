@@ -9,14 +9,18 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:permission_handler/permission_handler.dart'
     as permission_handler;
+import 'package:provider/provider.dart';
 import 'package:vms/admin/menu/view/menu.dart';
+import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/auth/controller/fcm_token_listener.dart';
 import 'package:vms/auth/model/master_model.dart';
 import 'package:vms/auth/model/user_model.dart';
 import 'package:vms/auth/view/auth_page.dart';
 import 'package:vms/constant.dart';
+import 'package:vms/driver/bg_locator/bg_locator_provider.dart';
 import 'package:vms/driver/home/view/home.dart';
 import 'package:vms/driver/permission/view/permission_page.dart';
+import 'package:vms/global/function/local_storage_handler.dart';
 import 'package:vms/global/model/hexcolor.dart';
 import 'package:vms/global/widget/popup_handler.dart';
 
@@ -135,6 +139,7 @@ class AuthController extends ChangeNotifier {
 
   logout() async {
     await localStorage.erase();
+    Provider.of<BGLocatorProvider>(context, listen: false).onStop();
     pageMover.pushAndRemove(widget: const LoginPage());
   }
 
@@ -159,7 +164,33 @@ class AuthController extends ChangeNotifier {
 
       if (snapshot.exists) {
         Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+
         User user = User.fromJson(data);
+        if (user.type == driverKey) {
+          var driverController =
+              Provider.of<DriversController>(context, listen: false);
+
+          var positionData = await driverController.getPosition(uid: user.uid);
+          var vehicleData =
+              await driverController.getVehicle(uid: user.vehicleUid);
+          user.position = positionData[0];
+          user.position.sort(
+            (a, b) => b.dateTime.compareTo(a.dateTime),
+          );
+          user.position.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
+          user.totalDistance =
+              driverController.calculateTotalDistance(positionData[1]);
+          user.distanceToday =
+              driverController.calculateTotalDistance(positionData[2]);
+          user.vehicle = vehicleData;
+          if (user.vehicle != null) {
+            user.nextServiceOdo = user.vehicle!.serviceOdoEvery -
+                (user.vehicle!.odo - user.vehicle!.lastService!.serviceAtOdo);
+          }
+          user.tripHistory =
+              driverController.separatePositionsByDateTime(positionData[0]);
+        }
 
         return user;
       } else {
@@ -185,25 +216,23 @@ class AuthController extends ChangeNotifier {
       String uid = userDoc.id;
       loadingLogin = false;
 
-      await getUserDetails(uid: uid);
+      user = await getUserDetails(uid: uid);
 
       if (passwordController.text == storedPassword) {
         String currentToken = await updateToken(uid: uid);
         localStorage.write(tokenKey, currentToken);
         localStorage.write(uidKey, uid);
         localStorage.write(companyUidKey, user!.companyUid);
-        var permissonLocation =
-            (await permission_handler.Permission.location.isGranted);
-        var permissionNotification =
-            (await permission_handler.Permission.notification.isGranted);
-        var permissionCamera =
-            (await permission_handler.Permission.camera.isGranted);
-        var allowedPermission = '';
-        logger.f('masuk sini ges');
-        if (user!.type == driverKey) {
-          if ((!permissonLocation ||
-              !permissionCamera ||
-              !permissionNotification)) {
+        logger.f(user!.type + driverKey);
+        putIsDriver(value: (user!.type == driverKey));
+        logger.f(getIsDriver());
+        if (getIsDriver()) {
+          var permissonLocation =
+              (await permission_handler.Permission.location.isGranted);
+          var permissionNotification =
+              (await permission_handler.Permission.notification.isGranted);
+          var allowedPermission = '';
+          if ((!permissonLocation || !permissionNotification)) {
             pageMover.pushAndRemove(
                 widget: LocationPermissionPage(
               allowedPermission: allowedPermission,
@@ -220,7 +249,7 @@ class AuthController extends ChangeNotifier {
       }
     } catch (e) {
       loadingLogin = false;
-      popupHandler.showErrorPopup(e.toString());
+      popupHandler.showErrorPopup('Wrong username/password');
       // Handle errors or return false as needed
     }
   }

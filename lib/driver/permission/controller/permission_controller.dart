@@ -4,7 +4,6 @@ import 'package:permission_handler/permission_handler.dart'
     as permission_handler;
 import 'package:vms/constant.dart';
 import 'package:vms/driver/home/view/home.dart';
-import 'package:vms/driver/permission/view/gps_permission_page.dart';
 import 'package:vms/driver/permission/view/permission_page.dart';
 
 class GPSLocationPermissionHandlerProvider extends ChangeNotifier {
@@ -44,41 +43,21 @@ class GPSLocationPermissionHandlerProvider extends ChangeNotifier {
         (await permission_handler.Permission.location.isGranted);
     var permissionNotification =
         (await permission_handler.Permission.notification.isGranted);
-    var permissionCamera =
-        (await permission_handler.Permission.camera.isGranted);
     if (await Geolocator.isLocationServiceEnabled() &&
             permissionGranted == LocationPermission.whileInUse ||
         permissionGranted == LocationPermission.always) {
-    } else if (!permissonLocation ||
-        !permissionCamera ||
-        !permissionNotification) {
+    } else if (!permissonLocation || !permissionNotification) {
       var allowedPermission = '';
       if (!permissonLocation) {
         allowedPermission += 'Lokasi,';
       }
-      if (!permissionCamera) {
-        allowedPermission += 'Kamera,';
-      }
       if (!permissionNotification) {
         allowedPermission += 'Notifikasi,';
       }
-      Navigator.pushAndRemoveUntil(
-        context,
-        CupertinoPageRoute(
-          builder: (_) => LocationPermissionPage(
-            allowedPermission: allowedPermission,
-          ),
-        ),
-        (route) => false,
-      );
+      pageMover.pushAndRemove(
+          widget: LocationPermissionPage(allowedPermission: allowedPermission));
     } else if (await Geolocator.isLocationServiceEnabled()) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        CupertinoPageRoute(
-          builder: (_) => const GPSPermissionPage(),
-        ),
-        (route) => false,
-      );
+      pageMover.pushAndRemove(widget: const HomeDriver());
     }
   }
 }

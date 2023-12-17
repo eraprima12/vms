@@ -8,7 +8,6 @@ import 'package:vms/admin/live_view/view/trip_history.dart';
 import 'package:vms/admin/live_view/widget/chart.dart';
 import 'package:vms/admin/live_view/widget/custom_marker.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
-import 'package:vms/auth/model/driver_model.dart';
 import 'package:vms/auth/model/user_model.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/global/function/status_color.dart';
@@ -50,46 +49,41 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
         color: Colors.white,
         child: GestureDetector(
           onTap: () {
-            //! nanti disini
+            pageMover.push(
+                widget: TripHistory(
+              uid: widget.uid,
+            ));
           },
-          child: GestureDetector(
-            onTap: () {
-              pageMover.push(
-                  widget: TripHistory(
-                uid: widget.uid,
-              ));
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    offset: const Offset(0, 1),
-                    spreadRadius: 1,
-                    blurRadius: 5,
-                    color: primaryColor,
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    WidgetText(
-                      text: 'Trip History',
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    SizedBox(
-                      width: 10,
-                    ),
-                    Icon(
-                      Icons.history,
-                      color: Colors.white,
-                    )
-                  ],
+          child: Container(
+            decoration: BoxDecoration(
+              color: primaryColor,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  offset: const Offset(0, 1),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  color: primaryColor,
                 ),
+              ],
+            ),
+            child: const Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  WidgetText(
+                    text: 'Trip History',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Icon(
+                    Icons.history,
+                    color: Colors.white,
+                  )
+                ],
               ),
             ),
           ),
@@ -282,8 +276,9 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                                 children: [
                                   Column(
                                     children: [
-                                      const WidgetText(
-                                        text: '20 KM/H',
+                                      WidgetText(
+                                        text:
+                                            '${(data.position[0].speed * 3.6).toStringAsFixed(0)} KM/H',
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
                                       ),
@@ -312,15 +307,16 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                                   ),
                                   Column(
                                     children: [
-                                      const WidgetText(
-                                        text: '18000 KM',
+                                      WidgetText(
+                                        text:
+                                            '${data.vehicle!.odo.toStringAsFixed(0)} KM',
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
                                       ),
                                       Row(
                                         children: [
                                           WidgetText(
-                                            text: 'Distance',
+                                            text: 'Odometer',
                                             fontSize: 12,
                                             color: Colors.grey[600],
                                           ),
@@ -357,12 +353,35 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   WidgetText(
+                                    text: 'Service Odo Every...',
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                  WidgetText(
+                                    text:
+                                        '${data.vehicle!.serviceOdoEvery.toStringAsFixed(0)} KM',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            SizedBox(
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  WidgetText(
                                     text: 'Next service in',
                                     fontSize: 14,
                                     color: Colors.grey[600],
                                   ),
-                                  const WidgetText(
-                                    text: '20 KM',
+                                  WidgetText(
+                                    text:
+                                        '${data.nextServiceOdo!.toStringAsFixed(0)} KM',
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                   ),
@@ -382,8 +401,9 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                                     fontSize: 14,
                                     color: Colors.grey[600],
                                   ),
-                                  const WidgetText(
-                                    text: '18000 KM',
+                                  WidgetText(
+                                    text:
+                                        '${data.vehicle!.lastService!.serviceAtOdo.toStringAsFixed(0)} KM',
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                   ),

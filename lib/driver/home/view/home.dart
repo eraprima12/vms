@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:vms/admin/home/controller/home_controller.dart';
 import 'package:vms/admin/home/widget/card_widget.dart';
+import 'package:vms/admin/live_view/view/trip_history.dart';
 import 'package:vms/auth/controller/auth_controller.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
-import 'package:vms/auth/model/driver_model.dart';
 import 'package:vms/constant.dart';
+import 'package:vms/driver/bg_locator/bg_locator_provider.dart';
 import 'package:vms/driver/profile/view/profile.dart';
-import 'package:vms/gen/position_generator.dart';
 import 'package:vms/global/widget/card.dart';
 import 'package:vms/global/widget/widgettext.dart';
 
@@ -23,19 +22,34 @@ class HomeDriver extends StatefulWidget {
 class _HomeDriverState extends State<HomeDriver> {
   String address = '';
   DateTime? lastTapTime;
+  bool _isSwitchOn = false;
   @override
   void initState() {
-    Provider.of<AuthController>(context, listen: false).initListener();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // var position = Provider.of<AuthController>(context, listen: false)
-      //     .user!
-      //     .latestPosition;
-      // address = await Provider.of<DriversController>(context, listen: false)
-      //     .getAddressFromLatLng(
-      //         latitude: position.latitude, longitude: position.longitude);
+      var user = Provider.of<AuthController>(context, listen: false).user!;
+      _isSwitchOn = user.isOnline;
+      getGPSSettings();
+      logger.f(user.isOnline);
+      if (user.position.isNotEmpty) {
+        var position = user.position[0];
+        address = await Provider.of<DriversController>(context, listen: false)
+            .getAddressFromLatLng(
+                latitude: position.geopoint.latitude,
+                longitude: position.geopoint.longitude);
+      }
       setState(() {});
     });
     super.initState();
+  }
+
+  getGPSSettings() {
+    var bgLocator = Provider.of<BGLocatorProvider>(context, listen: false);
+    bgLocator.initiate(context);
+    if (_isSwitchOn) {
+      bgLocator.onStart();
+    } else {
+      bgLocator.onStop();
+    }
   }
 
   @override
@@ -43,6 +57,8 @@ class _HomeDriverState extends State<HomeDriver> {
     var provider = Provider.of<AuthController>(context);
     var unlistenedprovider =
         Provider.of<AuthController>(context, listen: false);
+    var unlistenedbgprovider =
+        Provider.of<BGLocatorProvider>(context, listen: false);
     return WillPopScope(
       onWillPop: () async {
         DateTime now = DateTime.now();
@@ -69,7 +85,24 @@ class _HomeDriverState extends State<HomeDriver> {
                   children: [
                     Expanded(
                       child: RefreshIndicator(
-                        onRefresh: () async {},
+                        onRefresh: () async {
+                          getGPSSettings();
+                          var user = Provider.of<AuthController>(context,
+                                  listen: false)
+                              .user!;
+                          _isSwitchOn = user.isOnline;
+                          if (user.position.isNotEmpty) {
+                            var position = user.position[0];
+
+                            address = await Provider.of<DriversController>(
+                                    context,
+                                    listen: false)
+                                .getAddressFromLatLng(
+                                    latitude: position.geopoint.latitude,
+                                    longitude: position.geopoint.longitude);
+                          }
+                          setState(() {});
+                        },
                         child: ListView(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           children: [
@@ -94,32 +127,67 @@ class _HomeDriverState extends State<HomeDriver> {
                                       pageMover.push(
                                           widget: const DriverProfilePage());
                                     },
-                                    child: CircleAvatar(
-                                      backgroundColor: Colors.white,
-                                      child: provider.user!.avatar != ''
-                                          ? ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(50),
-                                              child: Image.network(
-                                                provider.user!.avatar,
-                                                height: 50,
-                                                width: 50,
-                                                fit: BoxFit.cover,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: BoxDecoration(
+                                        color: primaryColor,
+                                        borderRadius: BorderRadius.circular(50),
+                                      ),
+                                      child: CircleAvatar(
+                                        backgroundColor: Colors.white,
+                                        child: provider.user!.avatar != ''
+                                            ? ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(50),
+                                                child: Image.network(
+                                                  provider.user!.avatar,
+                                                  height: 50,
+                                                  width: 50,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                              )
+                                            : WidgetText(
+                                                text: provider.user!.username
+                                                    .substring(0, 1)
+                                                    .toUpperCase(),
+                                                color: secondaryColor,
+                                                fontWeight: FontWeight.bold,
                                               ),
-                                            )
-                                          : WidgetText(
-                                              text: provider.user!.username
-                                                  .substring(0, 1)
-                                                  .toUpperCase(),
-                                              color: secondaryColor,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                      ),
                                     ),
                                   )
                                 ],
                               ),
                             ),
                             const SizedBox(height: 20),
+                            CardWithTitleAndSubtitle(
+                                data: Row(
+                                  children: [
+                                    Switch(
+                                      value: _isSwitchOn,
+                                      onChanged: (value) {
+                                        setState(
+                                          () {
+                                            _isSwitchOn = value;
+                                            unlistenedbgprovider
+                                                .updateIsOnline(value);
+                                            getGPSSettings();
+                                          },
+                                        );
+                                      },
+                                    ),
+                                    WidgetText(
+                                      text: _isSwitchOn ? 'On' : 'Off',
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    )
+                                  ],
+                                ),
+                                title: 'GPS status',
+                                color: secondaryColor),
+                            const SizedBox(
+                              height: 20,
+                            ),
                             Row(
                               children: [
                                 Expanded(
@@ -128,8 +196,8 @@ class _HomeDriverState extends State<HomeDriver> {
                                     title: 'Total Distance Today',
                                     data: WidgetText(
                                       color: Colors.white,
-                                      text: provider.user!.distanceToday
-                                          .toStringAsFixed(2),
+                                      text:
+                                          '${provider.user!.distanceToday.toStringAsFixed(2)}KM',
                                       fontSize: 24,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -145,7 +213,7 @@ class _HomeDriverState extends State<HomeDriver> {
                                     data: WidgetText(
                                       color: Colors.white,
                                       text:
-                                          '${provider.user!.totalDistance.toStringAsFixed(0)} KM',
+                                          '${provider.user!.totalDistance.toStringAsFixed(2)} KM',
                                       fontSize: 24,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -154,96 +222,148 @@ class _HomeDriverState extends State<HomeDriver> {
                               ],
                             ),
                             const SizedBox(height: 20),
-                            CardWithServiceInKm(
-                              color: secondaryColor,
-                              title: 'Service in ... KM',
-                              data: const WidgetText(
-                                color: Colors.white,
-                                text: '500 KM',
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                              ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CardWithServiceInKm(
+                                    color: secondaryColor,
+                                    title: 'Service in ... KM',
+                                    data: WidgetText(
+                                      color: Colors.white,
+                                      text: provider.user!.nextServiceOdo!
+                                          .toStringAsFixed(2),
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(
+                                  width: 10,
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    pageMover.push(
+                                        widget: TripHistory(
+                                            uid: unlistenedprovider.user!.uid));
+                                  },
+                                  child: Expanded(
+                                    child: CardWithServiceInKm(
+                                      color: thirdColor,
+                                      title: 'Trip History',
+                                      data: const Row(
+                                        children: [
+                                          WidgetText(
+                                            color: Colors.white,
+                                            text: 'Play',
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                          SizedBox(
+                                            width: 10,
+                                          ),
+                                          Icon(
+                                            Icons.play_circle_fill_outlined,
+                                            color: Colors.white,
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 20),
-                            // CardWithTitleAndSubtitle(
-                            //   data: Column(
-                            //     crossAxisAlignment: CrossAxisAlignment.start,
-                            //     children: [
-                            //       SizedBox(
-                            //         height: 200,
-                            //         width: MediaQuery.of(context).size.width,
-                            //         child: Container(
-                            //           decoration: BoxDecoration(
-                            //             border: Border.all(
-                            //               color: Colors.grey,
-                            //             ),
-                            //             borderRadius: BorderRadius.circular(8),
-                            //           ),
-                            //           child: ClipRRect(
-                            //             borderRadius: BorderRadius.circular(8),
-                            //             child: FlutterMap(
-                            //               options: MapOptions(
-                            //                 center: LatLng(
-                            //                   provider.user!
-                            //                       .latestPosition.latitude,
-                            //                   provider.user!
-                            //                       .latestPosition.longitude,
-                            //                 ),
-                            //                 zoom: 15,
-                            //               ),
-                            //               children: [
-                            //                 TileLayer(
-                            //                   urlTemplate:
-                            //                       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            //                   subdomains: const ['a', 'b', 'c'],
-                            //                 ),
-                            //                 MarkerLayer(
-                            //                   markers: [
-                            //                     Marker(
-                            //                       width: 30.0,
-                            //                       height: 30.0,
-                            //                       point: LatLng(
-                            //                         provider
-                            //                             .user!
-                            //                             .latestPosition
-                            //                             .latitude,
-                            //                         provider
-                            //                             .user!
-                            //                             .latestPosition
-                            //                             .longitude,
-                            //                       ),
-                            //                       child: Container(
-                            //                         child: const Icon(
-                            //                           Icons.location_on,
-                            //                           color: Colors
-                            //                               .red, // Change to your desired color
-                            //                         ),
-                            //                       ),
-                            //                     ),
-                            //                   ],
-                            //                 ),
-                            //               ],
-                            //             ),
-                            //           ),
-                            //         ),
-                            //       ),
-                            //       const SizedBox(height: 10),
-                            //       WidgetText(
-                            //         text: address,
-                            //         color: Colors.white,
-                            //         fontWeight: FontWeight.w600,
-                            //       ),
-                            //       WidgetText(
-                            //         text:
-                            //             '${provider.user!.latestPosition.latitude}, ${provider.user!.latestPosition.longitude}',
-                            //         color: Colors.white,
-                            //         fontWeight: FontWeight.w400,
-                            //       ),
-                            //     ],
-                            //   ),
-                            //   title: 'You Are Here',
-                            //   color: thirdColor,
-                            // )
+                            provider.user!.position.isNotEmpty
+                                ? CardWithTitleAndSubtitle(
+                                    data: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        SizedBox(
+                                          height: 200,
+                                          width:
+                                              MediaQuery.of(context).size.width,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                color: Colors.grey,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              child: FlutterMap(
+                                                options: MapOptions(
+                                                  center: LatLng(
+                                                    provider.user!.position[0]
+                                                        .geopoint.latitude,
+                                                    provider.user!.position[0]
+                                                        .geopoint.longitude,
+                                                  ),
+                                                  zoom: 15,
+                                                ),
+                                                children: [
+                                                  TileLayer(
+                                                    urlTemplate:
+                                                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                                    subdomains: const [
+                                                      'a',
+                                                      'b',
+                                                      'c'
+                                                    ],
+                                                  ),
+                                                  MarkerLayer(
+                                                    markers: [
+                                                      Marker(
+                                                        width: 30.0,
+                                                        height: 30.0,
+                                                        point: LatLng(
+                                                          provider
+                                                              .user!
+                                                              .position[0]
+                                                              .geopoint
+                                                              .latitude,
+                                                          provider
+                                                              .user!
+                                                              .position[0]
+                                                              .geopoint
+                                                              .longitude,
+                                                        ),
+                                                        child: Container(
+                                                          child: const Icon(
+                                                            Icons.location_on,
+                                                            color: Colors
+                                                                .red, // Change to your desired color
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        WidgetText(
+                                          text: address,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        WidgetText(
+                                          text:
+                                              '${provider.user!.position[0].geopoint.latitude}, ${provider.user!.position[0].geopoint.longitude}',
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ],
+                                    ),
+                                    title: 'You Are Here',
+                                    color: thirdColor,
+                                  )
+                                : const SizedBox()
                           ],
                         ),
                       ),

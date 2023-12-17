@@ -125,7 +125,7 @@ class _LocationPermissionPageState extends State<LocationPermissionPage>
               const SizedBox(
                 width: 11,
               ),
-              Image.asset('assets/allthetime.png'),
+              Image.asset('assets/bg_home.png'),
               const SizedBox(
                 height: 20,
               ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vms/constant.dart';
-import 'package:vms/global/function/random_string_generator.dart';
+import 'package:vms/global/widget/marquee_widget.dart';
 import 'package:vms/global/widget/widgettext.dart';
 
 class CardWithTitleAndSubtitle extends StatelessWidget {
@@ -32,9 +31,11 @@ class CardWithTitleAndSubtitle extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            WidgetText(
-              text: title,
-              color: Colors.white,
+            MarqueeWidget(
+              child: WidgetText(
+                text: title,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 10),
             data

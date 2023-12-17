@@ -1,12 +1,12 @@
 // ignore_for_file: unused_field
 
 import 'dart:async';
-import 'package:background_locator_2/location_dto.dart';
-
+import 'dart:developer' as dev;
 import 'dart:isolate';
 import 'dart:math';
-import 'dart:developer' as dev;
 import 'dart:ui';
+
+import 'package:background_locator_2/location_dto.dart';
 
 class LocationServiceRepository {
   static final LocationServiceRepository _instance =

@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -201,10 +202,9 @@ class _TripHistoryPageState extends State<TripHistory> {
             DateFormat('dd-MMM-yyyy').format(element.dateTime) ==
             DateFormat('dd-MMM-yyyy').format(date.toDate()))
         .toList();
-    logger.f(dataWithDate.length);
     for (int i = 0; i < dataWithDate.length; i++) {
       await Future.delayed(
-          const Duration(milliseconds: 500)); // Adjust as needed
+          const Duration(milliseconds: 100)); // Adjust as needed
 
       setState(() {
         animatedLatLngList.add(LatLng(dataWithDate[i].geopoint.latitude,

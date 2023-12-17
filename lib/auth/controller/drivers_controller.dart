@@ -157,7 +157,6 @@ class DriversController extends ChangeNotifier {
       var driverList = await getDriverData();
       highestDriverData = List.from(driverList);
       lowestDriverData = List.from(driverList);
-      logger.f('asd ${highestDriverData.length}');
       if (driverList.length > 1) {
         lowestDriverData
             .sort((a, b) => a.distanceToday.compareTo(b.distanceToday));
@@ -165,15 +164,11 @@ class DriversController extends ChangeNotifier {
             .sort((a, b) => b.distanceToday.compareTo(a.distanceToday));
         driverList
             .sort((a, b) => a.nextServiceOdo!.compareTo(b.nextServiceOdo!));
-      } else {
-        logger.f('asd');
-      }
+      } else {}
       driverData = List.from(driverList);
       loadingGetUser = false;
       return driverData;
-    } catch (e) {
-      logger.f(e);
-    }
+    } catch (e) {}
   }
 
   getDriverStatistic(String licensePlate) {
@@ -260,24 +255,23 @@ class DriversController extends ChangeNotifier {
       await Future.wait(driversCollection.docs.map((doc) async {
         var data = doc.data() as Map<String, dynamic>;
         User driver = User.fromJson(data);
-        logger.f(driver.name);
         var positionData = await getPosition(uid: driver.uid);
         var vehicleData = await getVehicle(uid: driver.vehicleUid);
         driver.position = positionData[0];
         driver.position.sort((a, b) => b.dateTime.compareTo(a.dateTime));
-        driver.nextServiceOdo =
-            (driver.vehicle!.odo - driver.vehicle!.lastService!.serviceAtOdo) -
-                driver.vehicle!.serviceOdoEvery;
+
         driver.totalDistance = calculateTotalDistance(positionData[1]);
         driver.distanceToday = calculateTotalDistance(positionData[2]);
         driver.vehicle = vehicleData;
+        if (driver.vehicle != null) {
+          driver.nextServiceOdo = driver.vehicle!.serviceOdoEvery -
+              (driver.vehicle!.odo - driver.vehicle!.lastService!.serviceAtOdo);
+        }
         driver.tripHistory = separatePositionsByDateTime(positionData[0]);
         driverList.add(driver);
       }).toList());
-      logger.f('asd driver list ${driverList.length}');
       return driverList;
     } catch (e) {
-      logger.f(e);
       return [];
     }
   }

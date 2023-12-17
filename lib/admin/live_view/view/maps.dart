@@ -1,9 +1,9 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:vms/admin/live_view/view/detail_vehicle.dart';
 import 'package:vms/admin/live_view/widget/custom_marker.dart';
@@ -80,7 +80,7 @@ class _MapScreenState extends State<MapScreen> {
       var vehicleRef =
           FirebaseFirestore.instance.collection('vehicle').doc(temp.vehicleUid);
 
-      var future = vehicleRef.get(); // Fetch vehicle data
+      var future = vehicleRef.get();
       futures.add(future);
 
       users.add(temp
@@ -89,8 +89,7 @@ class _MapScreenState extends State<MapScreen> {
         }).toList());
     }
 
-    var vehicleSnapshots =
-        await Future.wait(futures); // Wait for all vehicle data to be fetched
+    var vehicleSnapshots = await Future.wait(futures);
 
     for (var i = 0; i < users.length; i++) {
       var snapshot = vehicleSnapshots[i];

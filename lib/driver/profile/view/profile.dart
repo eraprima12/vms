@@ -22,26 +22,33 @@ class DriverProfilePage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(
-              height: 150,
-              width: 150,
-              child: CircleAvatar(
-                backgroundColor: Colors.white,
-                child: provider.user!.avatar != ''
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(100),
-                        child: Image.network(
-                          height: 150,
-                          width: 150,
-                          provider.user!.avatar,
-                          fit: BoxFit.cover,
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: BorderRadius.circular(100)),
+              child: SizedBox(
+                height: 150,
+                width: 150,
+                child: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: provider.user!.avatar != ''
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(100),
+                          child: Image.network(
+                            height: 150,
+                            width: 150,
+                            provider.user!.avatar,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : WidgetText(
+                          text:
+                              provider.user!.name.substring(0, 1).toUpperCase(),
+                          color: secondaryColor,
+                          fontWeight: FontWeight.bold,
                         ),
-                      )
-                    : WidgetText(
-                        text: provider.user!.name.substring(0, 1).toUpperCase(),
-                        color: secondaryColor,
-                        fontWeight: FontWeight.bold,
-                      ),
+                ),
               ),
             ),
             const SizedBox(height: 20),

@@ -15,6 +15,7 @@ import 'package:vms/auth/view/auth_page.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/driver/bg_locator/bg_locator_provider.dart';
 import 'package:vms/driver/home/view/home.dart';
+import 'package:vms/driver/permission/controller/permission_controller.dart';
 import 'package:vms/gen/assets.gen.dart';
 import 'package:vms/global/function/local_storage_handler.dart';
 import 'package:vms/global/widget/widgettext.dart';
@@ -31,6 +32,8 @@ void main() async {
         ChangeNotifierProvider(create: (context) => HomeController()),
         ChangeNotifierProvider(create: (context) => DriversController()),
         ChangeNotifierProvider(create: (context) => BGLocatorProvider()),
+        ChangeNotifierProvider(
+            create: (context) => GPSLocationPermissionHandlerProvider()),
       ],
       child: const MyApp(),
     ),
