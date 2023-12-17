@@ -1,8 +1,9 @@
-import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
 import 'dart:math' show cos, sqrt, asin, sin, pow, min, max;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
@@ -162,6 +163,8 @@ class DriversController extends ChangeNotifier {
             .sort((a, b) => a.distanceToday.compareTo(b.distanceToday));
         highestDriverData
             .sort((a, b) => b.distanceToday.compareTo(a.distanceToday));
+        driverList
+            .sort((a, b) => a.nextServiceOdo!.compareTo(b.nextServiceOdo!));
       } else {
         logger.f('asd');
       }
@@ -224,7 +227,23 @@ class DriversController extends ChangeNotifier {
     Map<String, dynamic> data =
         vehicleCollection.data() as Map<String, dynamic>;
     Vehicle vehicle = Vehicle.fromJson(data);
+    vehicle.lastService = await getServicesCloserToCurrentDay(uid: uid);
     return vehicle;
+  }
+
+  Future<Service> getServicesCloserToCurrentDay({required String uid}) async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('vehicle')
+        .doc(uid)
+        .collection('service')
+        .orderBy('created_at', descending: true)
+        .limit(1) // Adjust the limit as needed
+        .get();
+    late Service service;
+    for (QueryDocumentSnapshot doc in querySnapshot.docs) {
+      service = Service.fromMap(doc.data() as Map<String, dynamic>);
+    }
+    return service;
   }
 
   Future<List<User>> getDriverData() async {
@@ -246,6 +265,9 @@ class DriversController extends ChangeNotifier {
         var vehicleData = await getVehicle(uid: driver.vehicleUid);
         driver.position = positionData[0];
         driver.position.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+        driver.nextServiceOdo =
+            (driver.vehicle!.odo - driver.vehicle!.lastService!.serviceAtOdo) -
+                driver.vehicle!.serviceOdoEvery;
         driver.totalDistance = calculateTotalDistance(positionData[1]);
         driver.distanceToday = calculateTotalDistance(positionData[2]);
         driver.vehicle = vehicleData;

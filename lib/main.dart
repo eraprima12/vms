@@ -1,7 +1,9 @@
 // ignore_for_file: use_build_context_synchronous, use_build_context_synchronously
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
@@ -10,13 +12,12 @@ import 'package:vms/admin/menu/view/menu.dart';
 import 'package:vms/auth/controller/auth_controller.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/auth/view/auth_page.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:vms/constant.dart';
+import 'package:vms/driver/bg_locator/bg_locator_provider.dart';
 import 'package:vms/driver/home/view/home.dart';
 import 'package:vms/gen/assets.gen.dart';
 import 'package:vms/global/function/local_storage_handler.dart';
 import 'package:vms/global/widget/widgettext.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => AuthController()),
         ChangeNotifierProvider(create: (context) => HomeController()),
         ChangeNotifierProvider(create: (context) => DriversController()),
+        ChangeNotifierProvider(create: (context) => BGLocatorProvider()),
       ],
       child: const MyApp(),
     ),

@@ -13,6 +13,7 @@ class User {
   bool isOnline;
   String name;
   String uid;
+  int? nextServiceOdo;
   Vehicle? vehicle;
   String username;
   double totalDistance;
@@ -25,6 +26,7 @@ class User {
     required this.createdAt,
     required this.distanceToday,
     required this.password,
+    this.nextServiceOdo,
     required this.isOnline,
     required this.token,
     required this.position,
@@ -43,6 +45,7 @@ class User {
       isOnline: json['is_online'] ?? false,
       avatar: json['avatar'] ?? "",
       companyUid: json['company_uid'] ?? "",
+      nextServiceOdo: 0,
       createdAt: (json['created_at'] as Timestamp).toDate(),
       password: json['password'] ?? "",
       token: json['token'] ?? "",

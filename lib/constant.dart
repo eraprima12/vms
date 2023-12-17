@@ -11,6 +11,7 @@ var thirdColor = const Color(0xFF29ADB2);
 const fourthColor = Color.fromARGB(255, 255, 162, 0);
 Color textColor = Colors.grey[700]!;
 var splashLink = '';
+var bgLocationKey = 'bgLocationKey';
 var logger = Logger();
 var height = 0.0;
 var width = 0.0;

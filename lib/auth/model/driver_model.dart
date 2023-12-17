@@ -9,8 +9,10 @@ class Vehicle {
   int overspeedLimit;
   int serviceOdoEvery;
   String uid;
+  Service? lastService;
 
   Vehicle({
+    this.lastService,
     required this.avatar,
     required this.companyUid,
     required this.createdAt,
@@ -23,6 +25,7 @@ class Vehicle {
 
   factory Vehicle.fromJson(Map<String, dynamic> json) {
     return Vehicle(
+      lastService: null,
       avatar: json['avatar'] ?? "",
       companyUid: json['company_uid'] ?? "",
       createdAt: (json['created_at'] as Timestamp).toDate(),
@@ -44,6 +47,40 @@ class Vehicle {
       'overspeed_limit': overspeedLimit,
       'service_odo_every': serviceOdoEvery,
       'uid': uid,
+    };
+  }
+}
+
+class Service {
+  DateTime createdAt;
+  int serviceAtOdo;
+  String uid;
+  String vehicleUid;
+
+  Service({
+    required this.createdAt,
+    required this.serviceAtOdo,
+    required this.uid,
+    required this.vehicleUid,
+  });
+
+  factory Service.fromMap(Map<String, dynamic> map) {
+    return Service(
+      createdAt: map['created_at'] != null
+          ? (map['created_at'] as Timestamp).toDate()
+          : DateTime.now(),
+      serviceAtOdo: map['service_at_odo'] ?? 0,
+      uid: map['uid'] ?? '',
+      vehicleUid: map['vehicle_uid'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'created_at': createdAt,
+      'service_at_odo': serviceAtOdo,
+      'uid': uid,
+      'vehicle_uid': vehicleUid,
     };
   }
 }

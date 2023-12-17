@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, unused_local_variable
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -6,9 +6,7 @@ import 'package:vms/admin/home/controller/home_controller.dart';
 import 'package:vms/admin/home/widget/card_widget.dart';
 import 'package:vms/auth/controller/auth_controller.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
-import 'package:vms/auth/model/driver_model.dart';
 import 'package:vms/constant.dart';
-import 'package:vms/gen/driver_generator.dart';
 import 'package:vms/gen/position_generator.dart';
 import 'package:vms/global/widget/widgettext.dart';
 
@@ -37,10 +35,12 @@ class _HomePageState extends State<HomePage> {
     var provider = Provider.of<DriversController>(context);
     var unlistenedProvider =
         Provider.of<DriversController>(context, listen: false);
-
+    // var length =
+    //     provider.driverData.length < 3 ? provider.driverData.length : 3;
     var homeProvider = Provider.of<HomeController>(context);
     var unlistenedHomeProvider =
         Provider.of<HomeController>(context, listen: false);
+
     return Scaffold(
       body: Builder(builder: (context) {
         return SafeArea(
@@ -394,7 +394,7 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                           const SizedBox(height: 20),
-                          provider.lowestDriverData.isNotEmpty
+                          provider.driverData.isNotEmpty
                               ? Container(
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
@@ -424,8 +424,7 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                         CardWithTitleAndSubtitle(
                                           color: primaryColor.withOpacity(0.6),
-                                          title:
-                                              'Driver with Lowest\nPerformance today',
+                                          title: 'Vehicle Service',
                                           data: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
@@ -433,76 +432,91 @@ class _HomePageState extends State<HomePage> {
                                               const SizedBox(
                                                 height: 40,
                                               ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.start,
-                                                children: [
-                                                  CircleAvatar(
-                                                    backgroundColor:
-                                                        Colors.white,
-                                                    child: provider
-                                                                .lowestDriverData
-                                                                .first
-                                                                .avatar !=
-                                                            ''
-                                                        ? ClipRRect(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        50),
-                                                            child:
-                                                                Image.network(
-                                                              provider
-                                                                  .lowestDriverData
-                                                                  .first
-                                                                  .avatar,
-                                                              height: 50,
-                                                              width: 50,
-                                                              fit: BoxFit.cover,
+                                              for (int i = 0; i < 0; i++)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                    top: 8,
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.start,
+                                                    children: [
+                                                      CircleAvatar(
+                                                        backgroundColor:
+                                                            Colors.white,
+                                                        child: provider
+                                                                    .driverData[
+                                                                        i]
+                                                                    .avatar !=
+                                                                ''
+                                                            ? ClipRRect(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                  50,
+                                                                ),
+                                                                child: Image
+                                                                    .network(
+                                                                  provider
+                                                                      .driverData[
+                                                                          i]
+                                                                      .avatar,
+                                                                  height: 50,
+                                                                  width: 50,
+                                                                  fit: BoxFit
+                                                                      .cover,
+                                                                ),
+                                                              )
+                                                            : WidgetText(
+                                                                text: provider
+                                                                    .driverData[
+                                                                        i]
+                                                                    .name
+                                                                    .substring(
+                                                                        0, 1)
+                                                                    .toUpperCase(),
+                                                                color:
+                                                                    thirdColor,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                      ),
+                                                      const SizedBox(
+                                                        width: 10,
+                                                      ),
+                                                      Expanded(
+                                                        child: Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            WidgetText(
+                                                              text: provider
+                                                                  .driverData[i]
+                                                                  .name,
+                                                              color:
+                                                                  Colors.white,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
                                                             ),
-                                                          )
-                                                        : WidgetText(
-                                                            text: provider
-                                                                .lowestDriverData
-                                                                .first
-                                                                .name
-                                                                .substring(0, 1)
-                                                                .toUpperCase(),
-                                                            color: thirdColor,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
-                                                  ),
-                                                  const SizedBox(
-                                                    width: 10,
-                                                  ),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        WidgetText(
-                                                          text: provider
-                                                              .lowestDriverData
-                                                              .first
-                                                              .name,
-                                                          color: Colors.white,
-                                                          fontWeight:
-                                                              FontWeight.bold,
+                                                            WidgetText(
+                                                              text:
+                                                                  '${provider.driverData[i].distanceToday} KM',
+                                                              color:
+                                                                  Colors.white,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ],
                                                         ),
-                                                        WidgetText(
-                                                          text:
-                                                              '${provider.lowestDriverData.first.distanceToday} KM',
-                                                          color: Colors.white,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
+                                                      )
+                                                    ],
+                                                  ),
+                                                ),
                                             ],
                                           ),
                                         ),
