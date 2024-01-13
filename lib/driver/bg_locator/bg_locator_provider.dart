@@ -26,7 +26,6 @@ class BGLocatorProvider extends ChangeNotifier {
   List<Widget> logStr = [];
   bool? isRunning;
   LocationDto? lastLocation;
-  final bool _checkOnly = false;
   int totalData = 0;
   List<LatLng> listLatlong = [];
   bool? _isMocked;
@@ -54,7 +53,7 @@ class BGLocatorProvider extends ChangeNotifier {
             var temp = await localStorage.read(uidKey);
             if (temp != null) {
               await sendToGetStorage(LocationDto.fromJson(data));
-              if (totalData == 10) {
+              if (totalData == 1) {
                 postGPSBuffer();
                 totalData = 0;
               }
@@ -202,14 +201,14 @@ class BGLocatorProvider extends ChangeNotifier {
       disposeCallback: LocationCallbackHandler.disposeCallback,
       iosSettings: const IOSSettings(
         accuracy: LocationAccuracy.NAVIGATION,
-        distanceFilter: 0,
+        distanceFilter: 1,
         stopWithTerminate: true,
       ),
       autoStop: false,
       androidSettings: const AndroidSettings(
         accuracy: LocationAccuracy.NAVIGATION,
         interval: 10,
-        distanceFilter: 0,
+        distanceFilter: 1,
         wakeLockTime: 1440,
         client: LocationClient.google,
         androidNotificationSettings: AndroidNotificationSettings(
@@ -251,7 +250,6 @@ class BGLocatorProvider extends ChangeNotifier {
   onStart() async {
     try {
       if (await _checkLocationPermission()) {
-        var uid = await localStorage.read(uidKey);
         _startLocator();
         final isRunnings = await BackgroundLocator.isServiceRunning();
         isRunning = isRunnings;

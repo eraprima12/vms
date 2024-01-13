@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:vms/admin/live_view/view/trip_history.dart';
-import 'package:vms/admin/live_view/widget/chart.dart';
+import 'package:vms/admin/home/widget/card_widget.dart';
 import 'package:vms/admin/live_view/widget/custom_marker.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/auth/model/user_model.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/global/function/status_color.dart';
+import 'package:vms/global/widget/trip_history.dart';
 import 'package:vms/global/widget/widgettext.dart';
 
 class DetailVehiclePage extends StatefulWidget {
@@ -50,9 +50,10 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
         child: GestureDetector(
           onTap: () {
             pageMover.push(
-                widget: TripHistory(
-              uid: widget.uid,
-            ));
+              widget: TripHistory(
+                uid: widget.uid,
+              ),
+            );
           },
           child: Container(
             decoration: BoxDecoration(
@@ -100,10 +101,12 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                 interactiveFlags: InteractiveFlag.pinchZoom,
                 maxZoom: 20,
                 minZoom: 4,
-                initialCenter: LatLng(
-                  data.position[0].geopoint.latitude,
-                  data.position[0].geopoint.longitude,
-                ),
+                initialCenter: data.position.isNotEmpty
+                    ? LatLng(
+                        data.position[0].geopoint.latitude,
+                        data.position[0].geopoint.longitude,
+                      )
+                    : const LatLng(-7.2, 112),
               ),
               children: [
                 TileLayer(
@@ -116,10 +119,12 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                     Marker(
                       width: 100.0,
                       height: 80.0,
-                      point: LatLng(
-                        data.position[0].geopoint.latitude,
-                        data.position[0].geopoint.longitude,
-                      ),
+                      point: data.position.isNotEmpty
+                          ? LatLng(
+                              data.position[0].geopoint.latitude,
+                              data.position[0].geopoint.longitude,
+                            )
+                          : const LatLng(-7.2, 112),
                       child: GestureDetector(
                         onTap: () {
                           pageMover.push(
@@ -163,7 +168,6 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
               ),
             ),
           ),
-          // Draggable drawer on the bottom
           DraggableScrollableSheet(
             initialChildSize: drawerHeight,
             minChildSize: 0.3,
@@ -186,7 +190,6 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Draggable indicator
                       Center(
                         child: Container(
                           width: 40,
@@ -198,7 +201,6 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                           ),
                         ),
                       ),
-                      // Details content
                       Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -269,7 +271,7 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                             const SizedBox(
                               height: 20,
                             ),
-                            Container(
+                            SizedBox(
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -277,8 +279,9 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                                   Column(
                                     children: [
                                       WidgetText(
-                                        text:
-                                            '${(data.position[0].speed * 3.6).toStringAsFixed(0)} KM/H',
+                                        text: data.position.isNotEmpty
+                                            ? '${(data.position[0].speed * 3.6).toStringAsFixed(0)} KM/H'
+                                            : '0 KM/H',
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
                                       ),
@@ -413,25 +416,135 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                             const SizedBox(
                               height: 20,
                             ),
-                            WidgetText(
-                              text: 'Distance Coverage Past 7 Days',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                              color: Colors.grey[700],
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                WidgetText(
+                                  text: 'Distance Coverage',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                  color: Colors.grey[700],
+                                ),
+                                IconButton(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return SimpleDialog(
+                                          insetPadding:
+                                              const EdgeInsets.all(10),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          title: Column(
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.end,
+                                                children: [
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      pageMover.pop();
+                                                    },
+                                                    icon:
+                                                        const Icon(Icons.close),
+                                                  )
+                                                ],
+                                              ),
+                                              const WidgetText(
+                                                text: 'Pilih tanggal',
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                              const SizedBox(
+                                                height: 20,
+                                              ),
+                                              const SizedBox(
+                                                height: 40,
+                                              )
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                  icon: const Icon(Icons.date_range),
+                                )
+                              ],
                             ),
                             const SizedBox(
                               height: 20,
                             ),
-                            FlChartWidget(
-                              flSpots: provider
-                                  .getDriverStatistic(
-                                      data.vehicle!.licensePlate)
-                                  .$1,
-                              bottomTitles: provider
-                                  .getDriverStatistic(
-                                      data.vehicle!.licensePlate)
-                                  .$2,
-                            )
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CardWithTitleAndSubtitle(
+                                    data: WidgetText(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 24,
+                                        text:
+                                            '${data.distanceToday.toStringAsFixed(2)} KM'),
+                                    title: 'Today',
+                                    color: primaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CardWithTitleAndSubtitle(
+                                      data: WidgetText(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 24,
+                                          text:
+                                              '${data.totalDistanceYesterday.toStringAsFixed(2)} KM'),
+                                      title: 'Yesterday',
+                                      color: primaryColor),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CardWithTitleAndSubtitle(
+                                      data: WidgetText(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 24,
+                                          text:
+                                              '${data.totalDistancePast7Days.toStringAsFixed(2)} KM'),
+                                      title: 'Past 7 days',
+                                      color: primaryColor),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CardWithTitleAndSubtitle(
+                                      data: WidgetText(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 24,
+                                          text:
+                                              '${data.totalDistance.toStringAsFixed(2)} KM'),
+                                      title: 'Total',
+                                      color: primaryColor),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),

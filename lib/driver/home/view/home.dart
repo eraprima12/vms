@@ -3,13 +3,13 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:vms/admin/home/widget/card_widget.dart';
-import 'package:vms/admin/live_view/view/trip_history.dart';
 import 'package:vms/auth/controller/auth_controller.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/driver/bg_locator/bg_locator_provider.dart';
 import 'package:vms/driver/profile/view/profile.dart';
 import 'package:vms/global/widget/card.dart';
+import 'package:vms/global/widget/trip_history.dart';
 import 'package:vms/global/widget/widgettext.dart';
 
 class HomeDriver extends StatefulWidget {
@@ -160,31 +160,57 @@ class _HomeDriverState extends State<HomeDriver> {
                               ),
                             ),
                             const SizedBox(height: 20),
-                            CardWithTitleAndSubtitle(
-                                data: Row(
-                                  children: [
-                                    Switch(
-                                      value: _isSwitchOn,
-                                      onChanged: (value) {
-                                        setState(
-                                          () {
-                                            _isSwitchOn = value;
-                                            unlistenedbgprovider
-                                                .updateIsOnline(value);
-                                            getGPSSettings();
-                                          },
-                                        );
-                                      },
-                                    ),
-                                    WidgetText(
-                                      text: _isSwitchOn ? 'On' : 'Off',
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    )
-                                  ],
+                            Row(
+                              children: [
+                                CardWithTitleAndSubtitle(
+                                  data: Row(
+                                    children: [
+                                      Switch(
+                                        value: _isSwitchOn,
+                                        onChanged: (value) {
+                                          setState(
+                                            () {
+                                              _isSwitchOn = value;
+                                              unlistenedbgprovider
+                                                  .updateIsOnline(value);
+                                              getGPSSettings();
+                                            },
+                                          );
+                                        },
+                                      ),
+                                      WidgetText(
+                                        text: _isSwitchOn ? 'On' : 'Off',
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      )
+                                    ],
+                                  ),
+                                  title: 'GPS status',
+                                  color: thirdColor,
                                 ),
-                                title: 'GPS status',
-                                color: secondaryColor),
+                                const SizedBox(
+                                  width: 10,
+                                ),
+                                provider.user!.vehicle != null
+                                    ? Expanded(
+                                        child: CardWithTitleAndSubtitle(
+                                          data: Container(
+                                            padding: const EdgeInsets.all(6),
+                                            child: WidgetText(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 24,
+                                              color: Colors.white,
+                                              text: provider
+                                                  .user!.vehicle!.licensePlate,
+                                            ),
+                                          ),
+                                          title: 'Your Vehicle',
+                                          color: secondaryColor,
+                                        ),
+                                      )
+                                    : const SizedBox(),
+                              ],
+                            ),
                             const SizedBox(
                               height: 20,
                             ),
@@ -237,39 +263,45 @@ class _HomeDriverState extends State<HomeDriver> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(
-                                  width: 10,
+                                SizedBox(
+                                  width: provider.user!.position.isNotEmpty
+                                      ? 10
+                                      : 0,
                                 ),
-                                GestureDetector(
-                                  onTap: () {
-                                    pageMover.push(
-                                        widget: TripHistory(
-                                            uid: unlistenedprovider.user!.uid));
-                                  },
-                                  child: Expanded(
-                                    child: CardWithServiceInKm(
-                                      color: thirdColor,
-                                      title: 'Trip History',
-                                      data: const Row(
-                                        children: [
-                                          WidgetText(
-                                            color: Colors.white,
-                                            text: 'Play',
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w700,
+                                provider.user!.position.isNotEmpty
+                                    ? GestureDetector(
+                                        onTap: () {
+                                          pageMover.push(
+                                              widget: TripHistory(
+                                                  uid: unlistenedprovider
+                                                      .user!.uid));
+                                        },
+                                        child: Expanded(
+                                          child: CardWithServiceInKm(
+                                            color: thirdColor,
+                                            title: 'Trip History',
+                                            data: const Row(
+                                              children: [
+                                                WidgetText(
+                                                  color: Colors.white,
+                                                  text: 'Play',
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                                SizedBox(
+                                                  width: 10,
+                                                ),
+                                                Icon(
+                                                  Icons
+                                                      .play_circle_fill_outlined,
+                                                  color: Colors.white,
+                                                )
+                                              ],
+                                            ),
                                           ),
-                                          SizedBox(
-                                            width: 10,
-                                          ),
-                                          Icon(
-                                            Icons.play_circle_fill_outlined,
-                                            color: Colors.white,
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                        ),
+                                      )
+                                    : const SizedBox(),
                               ],
                             ),
                             const SizedBox(height: 20),
@@ -331,8 +363,8 @@ class _HomeDriverState extends State<HomeDriver> {
                                                               .geopoint
                                                               .longitude,
                                                         ),
-                                                        child: Container(
-                                                          child: const Icon(
+                                                        child: const SizedBox(
+                                                          child: Icon(
                                                             Icons.location_on,
                                                             color: Colors
                                                                 .red, // Change to your desired color

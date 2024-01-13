@@ -1,3 +1,5 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -69,12 +71,8 @@ class _MapScreenState extends State<MapScreen> {
     var futures = <Future>[];
 
     for (var userDoc in docs) {
-      var userRef =
-          FirebaseFirestore.instance.collection('user').doc(userDoc.id);
-
-      var positionsSnapshot = await userRef
-          .collection('position')
-          .get(); // Fetch positions directly
+      var positionsSnapshot =
+          await FirebaseFirestore.instance.collection('position').get();
 
       var temp = User.fromJson(userDoc.data() as Map<String, dynamic>);
       var vehicleRef =
@@ -108,8 +106,6 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     var driverProvider = Provider.of<DriversController>(context);
-    var unlistenedDiverProvider =
-        Provider.of<DriversController>(context, listen: false);
     return StreamBuilder<List<User>>(
       stream: _userStreamController.stream,
       builder: (context, snapshot) {
@@ -129,7 +125,7 @@ class _MapScreenState extends State<MapScreen> {
               FlutterMap(
                 options: MapOptions(
                   maxZoom: 12,
-                  zoom: 5,
+                  initialZoom: 5,
                   initialCenter: const LatLng(-7.2, 112),
                   minZoom: 4,
                   initialCameraFit: driverProvider.latlnglist.length > 2

@@ -17,6 +17,8 @@ class User {
   Vehicle? vehicle;
   String username;
   double totalDistance;
+  double totalDistancePast7Days;
+  double totalDistanceYesterday;
   double distanceToday;
   String vehicleUid;
 
@@ -35,6 +37,8 @@ class User {
     required this.uid,
     required this.name,
     this.vehicle,
+    required this.totalDistancePast7Days,
+    required this.totalDistanceYesterday,
     required this.tripHistory,
     required this.username,
     required this.vehicleUid,
@@ -54,6 +58,8 @@ class User {
       uid: json['uid'] ?? "",
       tripHistory: [],
       distanceToday: 0,
+      totalDistancePast7Days: 0,
+      totalDistanceYesterday: 0,
       vehicle: null,
       position: [],
       totalDistance: 0,

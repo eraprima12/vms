@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, library_private_types_in_public_api
 
 import 'dart:async';
 
@@ -9,6 +9,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:vms/admin/live_view/widget/custom_marker.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/auth/model/user_model.dart';
 import 'package:vms/constant.dart';
@@ -24,7 +25,7 @@ class TripHistory extends StatefulWidget {
 
 class _TripHistoryPageState extends State<TripHistory> {
   List<LatLng> animatedLatLngList = [];
-
+  bool playing = false;
   Timestamp? value;
   MapController mapController = MapController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -50,7 +51,6 @@ class _TripHistoryPageState extends State<TripHistory> {
 
   @override
   Widget build(BuildContext context) {
-    var provider = Provider.of<DriversController>(context);
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
@@ -71,14 +71,14 @@ class _TripHistoryPageState extends State<TripHistory> {
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      color: primaryColor,
+                      color: !playing ? primaryColor : Colors.grey,
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
                           offset: const Offset(0, 1),
                           spreadRadius: 1,
                           blurRadius: 5,
-                          color: primaryColor,
+                          color: !playing ? primaryColor : Colors.grey,
                         ),
                       ],
                     ),
@@ -130,15 +130,14 @@ class _TripHistoryPageState extends State<TripHistory> {
                       MarkerLayer(
                         markers: [
                           Marker(
-                            width: 30.0,
-                            height: 30.0,
+                            width: 100,
+                            height: 100,
                             point: animatedLatLngList.isNotEmpty
                                 ? animatedLatLngList.last
                                 : const LatLng(0, 0),
-                            child: const Icon(
-                              Icons.location_on,
-                              color: Colors.red,
-                            ),
+                            child: CustomMarker(
+                                licensePlate: data.vehicle!.licensePlate,
+                                status: data.isOnline),
                           ),
                         ],
                       ),
@@ -177,12 +176,13 @@ class _TripHistoryPageState extends State<TripHistory> {
                                 height: 20,
                               ),
                               DropDownWidget(
-                                  selectedValue: value!,
-                                  onChanged: (values) {
-                                    value = values;
-                                    setState(() {});
-                                  },
-                                  tripHistory: data.tripHistory),
+                                selectedValue: value!,
+                                onChanged: (values) {
+                                  value = values;
+                                  setState(() {});
+                                },
+                                tripHistory: data.tripHistory,
+                              ),
                             ],
                           ),
                         ),
@@ -195,23 +195,49 @@ class _TripHistoryPageState extends State<TripHistory> {
     );
   }
 
+  List<PositionModel> removeDuplicates(List<PositionModel> list) {
+    Set<PositionModel> uniqueSet = {};
+    List<PositionModel> result = [];
+
+    for (var position in list) {
+      if (uniqueSet.add(position)) {
+        result.add(position);
+      }
+    }
+
+    return result;
+  }
+
   void _startAnimation({required Timestamp date}) async {
-    animatedLatLngList = [];
-    var dataWithDate = data.position
-        .where((element) =>
-            DateFormat('dd-MMM-yyyy').format(element.dateTime) ==
-            DateFormat('dd-MMM-yyyy').format(date.toDate()))
-        .toList();
-    for (int i = 0; i < dataWithDate.length; i++) {
-      await Future.delayed(
-          const Duration(milliseconds: 100)); // Adjust as needed
-
+    if (!playing) {
       setState(() {
-        animatedLatLngList.add(LatLng(dataWithDate[i].geopoint.latitude,
-            dataWithDate[i].geopoint.longitude));
+        playing = true;
       });
+      animatedLatLngList = [];
+      var dataWithDate = data.position
+          .where((element) =>
+              DateFormat('dd-MMM-yyyy').format(element.dateTime) ==
+              DateFormat('dd-MMM-yyyy').format(date.toDate()))
+          .toList();
 
-      mapController.move(animatedLatLngList.last, 15.0);
+      var animatedData = removeDuplicates(dataWithDate);
+      animatedData.sort(
+        (a, b) => a.dateTime.compareTo(b.dateTime),
+      );
+      for (int i = 0; i < animatedData.length; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        setState(() {
+          animatedLatLngList.add(LatLng(animatedData[i].geopoint.latitude,
+              animatedData[i].geopoint.longitude));
+        });
+        if (animatedLatLngList.length == animatedData.length) {
+          setState(() {
+            playing = false;
+          });
+        }
+        mapController.move(animatedLatLngList.last, 15.0);
+      }
     }
   }
 }

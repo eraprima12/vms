@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:vms/admin/home/view/list_driver.dart';
 import 'package:vms/admin/live_view/view/detail_vehicle.dart';
+import 'package:vms/admin/settings/view/list_vehicle.dart';
 import 'package:vms/admin/settings/view/settings.dart';
-import 'package:vms/auth/model/driver_model.dart';
 import 'package:vms/auth/model/user_model.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/global/model/action_model.dart';
@@ -16,21 +17,30 @@ class HomeController extends ChangeNotifier {
           title: 'List Vehicle',
           suffix: '',
           voidCallback: () {
-            searchController.closeView('Settings');
+            searchController.closeView('List Vehicle');
+            pageMover.push(widget: const ListVehicle());
             FocusManager.instance.primaryFocus?.unfocus();
           }),
       ActionModel(
           title: 'Best Driver',
           suffix: '',
           voidCallback: () {
-            searchController.closeView('Settings');
+            searchController.closeView('Best Driver');
+            pageMover.push(
+                widget: ListDriver(
+              isHighest: true,
+            ));
             FocusManager.instance.primaryFocus?.unfocus();
           }),
       ActionModel(
           title: 'Worst Driver',
           suffix: '',
           voidCallback: () {
-            searchController.closeView('Settings');
+            searchController.closeView('Worst Driver');
+            pageMover.push(
+                widget: ListDriver(
+              isHighest: false,
+            ));
             FocusManager.instance.primaryFocus?.unfocus();
           }),
       ActionModel(

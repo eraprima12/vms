@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:vms/admin/home/view/list_driver.dart';
+import 'package:vms/admin/settings/view/list_vehicle.dart';
 import 'package:vms/admin/settings/view/master_settings.dart';
 import 'package:vms/auth/controller/auth_controller.dart';
 import 'package:vms/constant.dart';
@@ -18,7 +20,14 @@ class _SettingsState extends State<Settings> {
     ActionModel(
       title: "Master Drivers",
       suffix: "",
-      voidCallback: () => print("Callback for Model 1"),
+      voidCallback: () {
+        pageMover.push(
+          widget: ListDriver(
+            isHighest: true,
+            isMaster: true,
+          ),
+        );
+      },
     ),
     ActionModel(
       title: "Master Settings",
@@ -27,7 +36,13 @@ class _SettingsState extends State<Settings> {
         pageMover.push(widget: const MasterSettings());
       },
     ),
-    // Add more models as needed
+    ActionModel(
+      title: "Master Vehicle",
+      suffix: "",
+      voidCallback: () {
+        pageMover.push(widget: const ListVehicle());
+      },
+    ),
   ];
   @override
   Widget build(BuildContext context) {

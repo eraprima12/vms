@@ -1,4 +1,4 @@
-import 'dart:math' show cos, sqrt, asin, sin, pow, min, max;
+import 'dart:math' show cos, sqrt, asin, sin, pow, min, max, atan2;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -25,6 +25,20 @@ class DriversController extends ChangeNotifier {
   List<LatLng> get latlnglist => _latlnglist;
   set latlnglist(List<LatLng> value) {
     _latlnglist = value;
+    notifyListeners();
+  }
+
+  List<Service> _listService = [];
+  List<Service> get listService => _listService;
+  set listService(List<Service> value) {
+    _listService = value;
+    notifyListeners();
+  }
+
+  List<Vehicle> _listVehicle = [];
+  List<Vehicle> get listVehicle => _listVehicle;
+  set listVehicle(List<Vehicle> value) {
+    _listVehicle = value;
     notifyListeners();
   }
 
@@ -168,7 +182,9 @@ class DriversController extends ChangeNotifier {
       driverData = List.from(driverList);
       loadingGetUser = false;
       return driverData;
-    } catch (e) {}
+    } catch (e) {
+      logger.f(e);
+    }
   }
 
   getDriverStatistic(String licensePlate) {
@@ -177,7 +193,6 @@ class DriversController extends ChangeNotifier {
     List<String> dataTime = [];
     for (int i = 6; i >= 0; i--) {
       DateTime date = currentDate.subtract(Duration(days: i));
-      String formattedDate = DateFormat('MM-dd').format(date);
       double
           yValue = // Your y-value calculation here, e.g., some random value for demonstration
           double.parse(DateFormat('d').format(date)) + 20;
@@ -216,6 +231,43 @@ class DriversController extends ChangeNotifier {
     );
   }
 
+  Future<List<Vehicle>> getListVehicle({bool unique = false}) async {
+    try {
+      listVehicle = [];
+      QuerySnapshot querySnapshot =
+          await FirebaseFirestore.instance.collection('vehicle').get();
+
+      List<Vehicle> vehicles = [];
+      querySnapshot.docs.map((doc) {
+        logger.f(doc);
+        late Vehicle data =
+            Vehicle.fromJson(doc.data() as Map<String, dynamic>);
+        Future.delayed(const Duration()).then((value) async {
+          data.lastService = await getServicesCloserToCurrentDay(uid: data.uid);
+        });
+        vehicles.add(data);
+      }).toList();
+      for (int i = 0; i < vehicles.length; i++) {
+        bool dataFound = false;
+        for (int j = 0; j < driverData.length; j++) {
+          if (driverData[j].vehicle!.uid == vehicles[i].uid) {
+            dataFound = true;
+            break;
+          }
+        }
+        if (!dataFound) {
+          listVehicle.add(vehicles[i]);
+        }
+      }
+      if (!unique) {
+        listVehicle = vehicles;
+      }
+      return vehicles;
+    } catch (e) {
+      return [];
+    }
+  }
+
   Future<Vehicle> getVehicle({required String uid}) async {
     DocumentSnapshot<Object?> vehicleCollection =
         await FirebaseFirestore.instance.collection('vehicle').doc(uid).get();
@@ -241,6 +293,108 @@ class DriversController extends ChangeNotifier {
     return service;
   }
 
+  Future<List<Service>> getListServices({required String uid}) async {
+    List<Service> temp = [];
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('vehicle')
+        .doc(uid)
+        .collection('service')
+        .orderBy('created_at', descending: true)
+        .get();
+    late Service service;
+    for (QueryDocumentSnapshot doc in querySnapshot.docs) {
+      service = Service.fromMap(doc.data() as Map<String, dynamic>);
+      temp.add(service);
+    }
+    logger.f(temp.length);
+    listService = temp;
+    return temp;
+  }
+
+  double _toRadians(double degrees) {
+    return degrees * (pi / 180.0);
+  }
+
+  double haversine(double lat1, double lon1, double lat2, double lon2) {
+    const R = 6371.0; // Earth radius in kilometers
+
+    final dLat = _toRadians(lat2 - lat1);
+    final dLon = _toRadians(lon2 - lon1);
+
+    final a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(_toRadians(lat1)) *
+            cos(_toRadians(lat2)) *
+            sin(dLon / 2) *
+            sin(dLon / 2);
+
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+    final distance = R * c;
+
+    return distance;
+  }
+
+  double totalDistanceCoverage(List<PositionModel> positions) {
+    positions.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
+    double totalDistance = 0.0;
+    double previousLatitude = 0.0;
+    double previousLongitude = 0.0;
+
+    for (int i = 0; i < positions.length; i++) {
+      PositionModel position = positions[i];
+
+      if (i > 0) {
+        totalDistance += haversine(
+          previousLatitude,
+          previousLongitude,
+          position.geopoint.latitude,
+          position.geopoint.longitude,
+        );
+      }
+
+      previousLatitude = position.geopoint.latitude;
+      previousLongitude = position.geopoint.longitude;
+    }
+
+    return totalDistance;
+  }
+
+  double distanceCoveragePast(List<PositionModel> positions, int substraction) {
+    positions.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
+    DateTime currentDate = DateTime.now();
+    DateTime subtr = substraction == 0
+        ? DateTime(currentDate.year, currentDate.month, currentDate.day)
+        : currentDate.subtract(Duration(days: substraction));
+
+    double totalDistance = 0.0;
+    double previousLatitude = 0.0;
+    double previousLongitude = 0.0;
+
+    for (int i = 0; i < positions.length; i++) {
+      PositionModel position = positions[i];
+
+      if (position.dateTime.isAfter(subtr)) {
+        if (i > 0) {
+          totalDistance += haversine(
+            previousLatitude,
+            previousLongitude,
+            position.geopoint.latitude,
+            position.geopoint.longitude,
+          );
+        }
+
+        previousLatitude = position.geopoint.latitude;
+        previousLongitude = position.geopoint.longitude;
+      } else {
+        break;
+      }
+    }
+
+    return totalDistance;
+  }
+
   Future<List<User>> getDriverData() async {
     try {
       String? companyUid = localStorage.read(companyUidKey) ?? '';
@@ -259,9 +413,12 @@ class DriversController extends ChangeNotifier {
         var vehicleData = await getVehicle(uid: driver.vehicleUid);
         driver.position = positionData[0];
         driver.position.sort((a, b) => b.dateTime.compareTo(a.dateTime));
-
-        driver.totalDistance = calculateTotalDistance(positionData[1]);
-        driver.distanceToday = calculateTotalDistance(positionData[2]);
+        driver.totalDistanceYesterday =
+            distanceCoveragePast(positionData[0], 1);
+        driver.totalDistancePast7Days =
+            distanceCoveragePast(positionData[0], 7);
+        driver.totalDistance = totalDistanceCoverage(positionData[0]);
+        distanceCoveragePast(positionData[0], 0);
         driver.vehicle = vehicleData;
         if (driver.vehicle != null) {
           driver.nextServiceOdo = driver.vehicle!.serviceOdoEvery -

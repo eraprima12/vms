@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:vms/admin/home/widget/card_widget.dart';
-import 'package:vms/auth/model/driver_model.dart';
 import 'package:vms/auth/model/user_model.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/global/widget/widgettext.dart';
