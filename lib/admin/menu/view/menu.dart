@@ -33,6 +33,9 @@ class _TabBarBottomNavPageState extends State<TabBarBottomNavPage> {
 
   @override
   Widget build(BuildContext context) {
+    height = MediaQuery.of(context).size.height;
+
+    width = MediaQuery.of(context).size.width;
     return WillPopScope(
       onWillPop: () async {
         DateTime now = DateTime.now();

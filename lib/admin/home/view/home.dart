@@ -33,6 +33,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    height = MediaQuery.of(context).size.height;
+
+    width = MediaQuery.of(context).size.width;
     var provider = Provider.of<DriversController>(context);
     var unlistenedProvider =
         Provider.of<DriversController>(context, listen: false);

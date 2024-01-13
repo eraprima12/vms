@@ -67,6 +67,9 @@ class _MasterSettingsState extends State<MasterSettings> {
 
   @override
   Widget build(BuildContext context) {
+    height = MediaQuery.of(context).size.height;
+
+    width = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: AppBar(
         title: const Text('User Interface Preference'),

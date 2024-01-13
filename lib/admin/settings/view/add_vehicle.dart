@@ -77,6 +77,9 @@ class _VehicleFormState extends State<VehicleForm> {
 
   @override
   Widget build(BuildContext context) {
+    height = MediaQuery.of(context).size.height;
+
+    width = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Vehicle Form'),

@@ -42,6 +42,8 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
+  late FCMTokenChangeListener tokenListener;
+
   bool _loadingMaster = false;
   bool get loadingMaster => _loadingMaster;
   set loadingMaster(bool value) {
@@ -256,6 +258,7 @@ class AuthController extends ChangeNotifier {
 
   logout() async {
     await localStorage.erase();
+    tokenListener.stopListening();
     Provider.of<BGLocatorProvider>(context, listen: false).onStop();
     pageMover.pushAndRemove(widget: const LoginPage());
   }
@@ -267,7 +270,7 @@ class AuthController extends ChangeNotifier {
   initListener() async {
     String uid = localStorage.read(uidKey);
     getAndSetUserDetail(uid: uid);
-    FCMTokenChangeListener tokenListener = FCMTokenChangeListener(
+ tokenListener = FCMTokenChangeListener(
       uid: uid,
       currentToken: user!.token,
     );
@@ -286,7 +289,6 @@ class AuthController extends ChangeNotifier {
         if (user.type == driverKey) {
           var driverController =
               Provider.of<DriversController>(context, listen: false);
-
           var positionData = await driverController.getPosition(uid: user.uid);
           var vehicleData =
               await driverController.getVehicle(uid: user.vehicleUid);
@@ -330,23 +332,22 @@ class AuthController extends ChangeNotifier {
           .where('username', isEqualTo: usernameController.text)
           .limit(1)
           .get();
-
       DocumentSnapshot userDoc = querySnapshot.docs.first;
       String storedPassword = userDoc.get('password');
       String uid = userDoc.id;
       loadingLogin = false;
-
       user = await getUserDetails(uid: uid);
 
       if (passwordController.text == storedPassword) {
+      logger.f(user!.type == driverKey);
         String currentToken = await updateToken(uid: uid);
+        getMasterSettings(uid: uid);
+      user = await getUserDetails(uid: uid);
         localStorage.write(tokenKey, currentToken);
         localStorage.write(uidKey, uid);
         localStorage.write(companyUidKey, user!.companyUid);
-        logger.f(user!.type + driverKey);
         putIsDriver(value: (user!.type == driverKey));
-        logger.f(getIsDriver());
-        if (getIsDriver()) {
+        if (user!.type == driverKey) {
           var permissonLocation =
               (await permission_handler.Permission.location.isGranted);
           var permissionNotification =
@@ -358,9 +359,11 @@ class AuthController extends ChangeNotifier {
               allowedPermission: allowedPermission,
             ));
           } else {
+      logger.f('masuk sini gan');
             pageMover.pushAndRemove(widget: const HomeDriver());
           }
         } else {
+      logger.f('masuk sana gan');
           pageMover.pushAndRemove(widget: const TabBarBottomNavPage());
         }
       } else {
@@ -376,7 +379,7 @@ class AuthController extends ChangeNotifier {
 
   Future<String> updateToken({required String uid}) async {
     try {
-      String fcmToken = await FirebaseMessaging.instance.getToken() ?? '';
+      String fcmToken = generateRandomString(length: 10);
       await FirebaseFirestore.instance
           .collection('user')
           .doc(uid)

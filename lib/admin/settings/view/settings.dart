@@ -46,6 +46,9 @@ class _SettingsState extends State<Settings> {
   ];
   @override
   Widget build(BuildContext context) {
+    height = MediaQuery.of(context).size.height;
+
+    width = MediaQuery.of(context).size.width;
     return Scaffold(
       body: ListView.builder(
         itemCount: models.length,

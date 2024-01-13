@@ -24,6 +24,9 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    height = MediaQuery.of(context).size.height;
+
+    width = MediaQuery.of(context).size.width;
     var unlistenedProvider =
         Provider.of<AuthController>(context, listen: false);
     var provider = Provider.of<AuthController>(context);

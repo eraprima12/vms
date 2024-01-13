@@ -95,6 +95,9 @@ class _AddDriverState extends State<AddDriver> {
 
   @override
   Widget build(BuildContext context) {
+    height = MediaQuery.of(context).size.height;
+
+    width = MediaQuery.of(context).size.width;
     var provider = Provider.of<DriversController>(context);
     return Scaffold(
       appBar: AppBar(

@@ -105,6 +105,9 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    height = MediaQuery.of(context).size.height;
+
+    width = MediaQuery.of(context).size.width;
     var driverProvider = Provider.of<DriversController>(context);
     return StreamBuilder<List<User>>(
       stream: _userStreamController.stream,

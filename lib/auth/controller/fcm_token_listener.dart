@@ -27,7 +27,7 @@ class FCMTokenChangeListener {
         .listen((DocumentSnapshot snapshot) {
       if (snapshot.exists) {
         String? fcmToken = snapshot.get('token');
-        log(jsonEncode('listening brok...'));
+        log(jsonEncode('$currentToken $fcmToken'));
         if (fcmToken != currentToken) {
           stopListening();
           localStorage.erase();

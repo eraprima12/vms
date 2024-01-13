@@ -32,6 +32,9 @@ class _ListServiceState extends State<ListService> {
     void showServicePopup(BuildContext context) {
       TextEditingController value = TextEditingController();
 
+    height = MediaQuery.of(context).size.height;
+
+    width = MediaQuery.of(context).size.width;
       showDialog(
         context: context,
         builder: (BuildContext context) {

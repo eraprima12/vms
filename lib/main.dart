@@ -22,9 +22,8 @@ import 'package:vms/global/widget/widgettext.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: FirebaseOptions(apiKey: 'AIzaSyDB_YwlKkmTehh32BjNAKDzR7g577AtDwM', appId: '1:1048493801736:android:d2070dd6b378870b26ecbd', messagingSenderId: '1048493801736', projectId: 'vehicle-monitoring-syste-8bfa1') );
   await GetStorage.init();
-
   runApp(
     MultiProvider(
       providers: [
