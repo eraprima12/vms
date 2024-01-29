@@ -1,5 +1,6 @@
 // ignore_for_file: must_be_immutable
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
@@ -20,7 +21,42 @@ class ListDriver extends StatefulWidget {
 }
 
 class _ListDriverState extends State<ListDriver> {
+  Timestamp value = Timestamp.now();
   TextEditingController controller = TextEditingController();
+  List<Timestamp> list = [];
+  @override
+  void initState() {
+    var driverData =
+        Provider.of<DriversController>(context, listen: false).driverData;
+    for (int i = 0; i < driverData.length; i++) {
+      for (int j = 0; j < driverData[i].tripHistory.length; j++) {
+        list.add(driverData[i].tripHistory[j]);
+      }
+    }
+    var temp = Set<Timestamp>.from(list);
+    list = temp.toList();
+    list.sort(
+      (a, b) => b.compareTo(a),
+    );
+    value = list[0];
+    logger.f(list.length);
+    setState(() {});
+    super.initState();
+  }
+
+  calculateDistance() {
+    var provider = Provider.of<DriversController>(context, listen: false);
+    var driverData = widget.isHighest
+        ? Provider.of<DriversController>(context, listen: false)
+            .highestDriverData
+        : Provider.of<DriversController>(context, listen: false)
+            .lowestDriverData;
+    for (int i = 0; i < provider.highestDriverData.length; i++) {
+      driverData[i].distanceToday = provider.distanceCoverageCounter(
+          driverData[i].position, value.toDate());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var provider = Provider.of<DriversController>(context);
@@ -55,13 +91,31 @@ class _ListDriverState extends State<ListDriver> {
                           pageMover.pop();
                         },
                         icon: const Icon(Icons.arrow_back_ios)),
-                    Expanded(
-                      child: TemplateTextField(
-                        onType: (val) {
-                          setState(() {});
-                        },
-                        textEditingController: controller,
-                        hint: 'Search driver name',
+                    SizedBox(
+                      height: 70,
+                      width: width - 80,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: TemplateTextField(
+                              onType: (val) {
+                                setState(() {});
+                              },
+                              textEditingController: controller,
+                              hint: 'Search driver name',
+                            ),
+                          ),
+                          // Expanded(
+                          //   child: DropDownWidget(
+                          //     selectedValue: value,
+                          //     onChanged: (values) {
+                          //       value = values ?? Timestamp.now();
+                          //       setState(() {});
+                          //     },
+                          //     tripHistory: list,
+                          //   ),
+                          // ),
+                        ],
                       ),
                     ),
                   ],
@@ -136,9 +190,27 @@ class _ListDriverState extends State<ListDriver> {
                                   : const SizedBox()
                         ],
                       ),
-                      subtitle: WidgetText(
-                          text:
-                              '${item[i].distanceToday.toStringAsFixed(2)} KM'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          WidgetText(
+                              fontWeight: FontWeight.bold,
+                              text:
+                                  'Today : ${item[i].distanceToday.toStringAsFixed(2)} KM'),
+                          WidgetText(
+                              fontWeight: FontWeight.bold,
+                              text:
+                                  'Yesterday : ${item[i].totalDistanceYesterday.toStringAsFixed(2)} KM'),
+                          WidgetText(
+                              fontWeight: FontWeight.bold,
+                              text:
+                                  'Past 7 Days : ${item[i].totalDistancePast7Days.toStringAsFixed(2)} KM'),
+                          WidgetText(
+                              fontWeight: FontWeight.bold,
+                              text:
+                                  'Total : ${item[i].totalDistance.toStringAsFixed(2)} KM'),
+                        ],
+                      ),
                     );
                   },
                 ),

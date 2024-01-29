@@ -22,7 +22,12 @@ import 'package:vms/global/widget/widgettext.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: FirebaseOptions(apiKey: 'AIzaSyDB_YwlKkmTehh32BjNAKDzR7g577AtDwM', appId: '1:1048493801736:android:d2070dd6b378870b26ecbd', messagingSenderId: '1048493801736', projectId: 'vehicle-monitoring-syste-8bfa1') );
+  await Firebase.initializeApp(
+      options: const FirebaseOptions(
+          apiKey: 'AIzaSyDB_YwlKkmTehh32BjNAKDzR7g577AtDwM',
+          appId: '1:1048493801736:android:d2070dd6b378870b26ecbd',
+          messagingSenderId: '1048493801736',
+          projectId: 'vehicle-monitoring-syste-8bfa1'));
   await GetStorage.init();
   runApp(
     MultiProvider(
@@ -46,12 +51,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       navigatorKey: navigatorKey,
       scaffoldMessengerKey: scaffoldKey,
-      title: 'Flutter Demo',
+      title: 'VMS',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const Splashscreen(title: 'Flutter Demo Home Page'),
+      home: const Splashscreen(title: 'Vehicle Monitoring System'),
     );
   }
 }
@@ -73,6 +78,7 @@ class _SplashscreenState extends State<Splashscreen> {
         String? token = localStorage.read(tokenKey);
         String? uid = localStorage.read(uidKey) ?? '';
         String? companyUid = localStorage.read(companyUidKey) ?? '';
+        logger.f(uid);
         if (token != null) {
           await Provider.of<AuthController>(context, listen: false)
               .getMasterSettings(uid: companyUid);

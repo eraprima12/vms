@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -8,6 +9,7 @@ import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/driver/bg_locator/bg_locator_provider.dart';
 import 'package:vms/driver/profile/view/profile.dart';
+import 'package:vms/gen/position_generator.dart';
 import 'package:vms/global/widget/card.dart';
 import 'package:vms/global/widget/trip_history.dart';
 import 'package:vms/global/widget/widgettext.dart';
@@ -28,15 +30,10 @@ class _HomeDriverState extends State<HomeDriver> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       var user = Provider.of<AuthController>(context, listen: false).user!;
       _isSwitchOn = user.isOnline;
-      getGPSSettings();
+      Provider.of<AuthController>(context, listen: false).initListener();
+      await getGPSSettings();
       logger.f(user.isOnline);
-      if (user.position.isNotEmpty) {
-        var position = user.position[0];
-        address = await Provider.of<DriversController>(context, listen: false)
-            .getAddressFromLatLng(
-                latitude: position.geopoint.latitude,
-                longitude: position.geopoint.longitude);
-      }
+
       setState(() {});
     });
     super.initState();
@@ -115,11 +112,16 @@ class _HomeDriverState extends State<HomeDriver> {
                               child: Row(
                                 children: [
                                   Expanded(
-                                    child: WidgetText(
-                                      color: textColor,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w700,
-                                      text: 'Hi, ${provider.user!.username}',
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        getPosition(uid: 'anMynBTq4C');
+                                      },
+                                      child: WidgetText(
+                                        color: textColor,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w700,
+                                        text: 'Hi, ${provider.user!.username}',
+                                      ),
                                     ),
                                   ),
                                   GestureDetector(
@@ -170,10 +172,14 @@ class _HomeDriverState extends State<HomeDriver> {
                                         onChanged: (value) {
                                           setState(
                                             () {
-                                              _isSwitchOn = value;
-                                              unlistenedbgprovider
-                                                  .updateIsOnline(value);
-                                              getGPSSettings();
+                                              if (unlistenedprovider
+                                                      .user!.vehicleUid !=
+                                                  '') {
+                                                _isSwitchOn = value;
+                                                unlistenedbgprovider
+                                                    .updateIsOnline(value);
+                                                getGPSSettings();
+                                              }
                                             },
                                           );
                                         },
@@ -306,94 +312,112 @@ class _HomeDriverState extends State<HomeDriver> {
                             ),
                             const SizedBox(height: 20),
                             provider.user!.position.isNotEmpty
-                                ? CardWithTitleAndSubtitle(
-                                    data: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        SizedBox(
-                                          height: 200,
-                                          width:
-                                              MediaQuery.of(context).size.width,
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              border: Border.all(
-                                                color: Colors.grey,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              child: FlutterMap(
-                                                options: MapOptions(
-                                                  center: LatLng(
-                                                    provider.user!.position[0]
-                                                        .geopoint.latitude,
-                                                    provider.user!.position[0]
-                                                        .geopoint.longitude,
+                                ? StreamBuilder<QuerySnapshot>(
+                                    stream: FirebaseFirestore.instance
+                                        .collection('position')
+                                        .where('user_uid',
+                                            isEqualTo: provider.user!.uid)
+                                        .orderBy('created_at', descending: true)
+                                        .limit(1)
+                                        .snapshots(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasError) {
+                                        return Text('Error: ${snapshot.error}');
+                                      }
+
+                                      if (!snapshot.hasData ||
+                                          snapshot.data!.docs.isEmpty) {
+                                        return const SizedBox();
+                                      }
+
+                                      var positionData =
+                                          snapshot.data!.docs[0].data() as Map;
+                                      var latitude =
+                                          (positionData['geopoint'] as GeoPoint)
+                                              .latitude;
+                                      var longitude =
+                                          (positionData['geopoint'] as GeoPoint)
+                                              .longitude;
+                                      logger.f(latitude);
+                                      return CardWithTitleAndSubtitle(
+                                        data: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            SizedBox(
+                                              height: 200,
+                                              width: MediaQuery.of(context)
+                                                  .size
+                                                  .width,
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  border: Border.all(
+                                                    color: Colors.grey,
                                                   ),
-                                                  zoom: 15,
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
                                                 ),
-                                                children: [
-                                                  TileLayer(
-                                                    urlTemplate:
-                                                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                                    subdomains: const [
-                                                      'a',
-                                                      'b',
-                                                      'c'
-                                                    ],
-                                                  ),
-                                                  MarkerLayer(
-                                                    markers: [
-                                                      Marker(
-                                                        width: 30.0,
-                                                        height: 30.0,
-                                                        point: LatLng(
-                                                          provider
-                                                              .user!
-                                                              .position[0]
-                                                              .geopoint
-                                                              .latitude,
-                                                          provider
-                                                              .user!
-                                                              .position[0]
-                                                              .geopoint
-                                                              .longitude,
-                                                        ),
-                                                        child: const SizedBox(
-                                                          child: Icon(
-                                                            Icons.location_on,
-                                                            color: Colors
-                                                                .red, // Change to your desired color
+                                                child: ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  child: FlutterMap(
+                                                    options: MapOptions(
+                                                      center: LatLng(
+                                                          latitude, longitude),
+                                                      zoom: 15,
+                                                    ),
+                                                    children: [
+                                                      TileLayer(
+                                                        urlTemplate:
+                                                            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                                        subdomains: const [
+                                                          'a',
+                                                          'b',
+                                                          'c'
+                                                        ],
+                                                      ),
+                                                      MarkerLayer(
+                                                        markers: [
+                                                          Marker(
+                                                            width: 30.0,
+                                                            height: 30.0,
+                                                            point: LatLng(
+                                                                latitude,
+                                                                longitude),
+                                                            child:
+                                                                const SizedBox(
+                                                              child: Icon(
+                                                                Icons
+                                                                    .location_on,
+                                                                color:
+                                                                    Colors.red,
+                                                              ),
+                                                            ),
                                                           ),
-                                                        ),
+                                                        ],
                                                       ),
                                                     ],
                                                   ),
-                                                ],
+                                                ),
                                               ),
                                             ),
-                                          ),
+                                            const SizedBox(height: 10),
+                                            // WidgetText(
+                                            //   text: address,
+                                            //   color: Colors.white,
+                                            //   fontWeight: FontWeight.w600,
+                                            // ),
+                                            WidgetText(
+                                              text: '$latitude, $longitude',
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ],
                                         ),
-                                        const SizedBox(height: 10),
-                                        WidgetText(
-                                          text: address,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        WidgetText(
-                                          text:
-                                              '${provider.user!.position[0].geopoint.latitude}, ${provider.user!.position[0].geopoint.longitude}',
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ],
-                                    ),
-                                    title: 'You Are Here',
-                                    color: thirdColor,
+                                        title: 'You Are Here',
+                                        color: thirdColor,
+                                      );
+                                    },
                                   )
                                 : const SizedBox()
                           ],

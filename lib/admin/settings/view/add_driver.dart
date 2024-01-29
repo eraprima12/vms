@@ -2,7 +2,6 @@
 
 import 'dart:io';
 
-import 'package:autocomplete_textfield/autocomplete_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -40,15 +39,31 @@ class _AddDriverState extends State<AddDriver> {
         _usernameController.text = widget.data!.username;
         _passwordController.text = widget.data!.password;
         _nameController.text = widget.data!.name;
+        Provider.of<DriversController>(context, listen: false)
+            .getListVehicle(unique: true);
+        Provider.of<DriversController>(context, listen: false)
+            .getAndMapDriverData();
         if (widget.data!.vehicle != null) {
           _vehicleUID.text = widget.data!.vehicle!.licensePlate;
           selected = widget.data!.vehicle!;
+          if (widget.isEdit!) {
+            Provider.of<DriversController>(context, listen: false)
+                .listVehicle
+                .add(widget.data!.vehicle!);
+          }
+          Provider.of<DriversController>(context, listen: false)
+              .listVehicle
+              .add(Vehicle(
+                  avatar: '',
+                  companyUid: '',
+                  createdAt: DateTime.now(),
+                  licensePlate: 'Unassign',
+                  odo: 0,
+                  overspeedLimit: 0,
+                  serviceOdoEvery: 0,
+                  uid: ''));
         }
       }
-      Provider.of<DriversController>(context, listen: false)
-          .getListVehicle(unique: true);
-      Provider.of<DriversController>(context, listen: false)
-          .getAndMapDriverData();
     });
   }
 
@@ -68,7 +83,7 @@ class _AddDriverState extends State<AddDriver> {
         .getListVehicle(unique: true);
     Provider.of<DriversController>(context, listen: false)
         .getAndMapDriverData();
-    if (formKey.currentState!.validate() && selected != null) {
+    if (formKey.currentState!.validate()) {
       await Provider.of<AuthController>(context, listen: false)
           .addDriver(
               widget.isEdit!,
@@ -177,37 +192,26 @@ class _AddDriverState extends State<AddDriver> {
                   controller: _nameController,
                   decoration: const InputDecoration(labelText: 'Name'),
                 ),
-                AutoCompleteTextField<Vehicle>(
-                  key: GlobalKey<AutoCompleteTextFieldState<Vehicle>>(),
-                  suggestions: provider.listVehicle,
-                  textInputAction: TextInputAction.search,
-                  clearOnSubmit: false,
-                  controller: _vehicleUID,
-                  decoration: const InputDecoration(
-                      label: WidgetText(text: 'Vehicle'),
-                      hintText: 'Type Vehicle License Plate'),
-                  itemFilter: (item, query) {
-                    return item.licensePlate
-                        .toLowerCase()
-                        .contains(query.toLowerCase());
-                  },
-                  itemSorter: (a, b) {
-                    return a.licensePlate.compareTo(b.licensePlate);
-                  },
-                  itemSubmitted: (item) {
+                DropdownButtonFormField<Vehicle>(
+                  value: selected,
+                  onChanged: (value) {
                     setState(() {
-                      _vehicleUID.text = item.licensePlate;
-                      selected = item;
+                      selected = value;
+                      _vehicleUID.text = value!.licensePlate;
                     });
                   },
-                  itemBuilder: (context, item) {
-                    return ListTile(
-                      title: Text(item.licensePlate),
+                  items: provider.listVehicle.map((Vehicle vehicle) {
+                    return DropdownMenuItem<Vehicle>(
+                      value: vehicle,
+                      child: Text(vehicle.licensePlate),
                     );
-                  },
+                  }).toList(),
+                  decoration: const InputDecoration(
+                    labelText: 'Vehicle',
+                    hintText: 'Select Vehicle',
+                  ),
                 ),
                 const SizedBox(height: 16),
-                // Submit Button
               ],
             ),
           ),

@@ -137,7 +137,9 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                           );
                         },
                         child: CustomMarker(
-                            licensePlate: data.vehicle!.licensePlate,
+                            licensePlate: data.vehicleUid != ''
+                                ? data.vehicle!.licensePlate
+                                : 'No Vehicle',
                             status: data.isOnline),
                       ),
                     ),
@@ -216,8 +218,10 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     WidgetText(
-                                      text: data.vehicle!.licensePlate
-                                          .toUpperCase(),
+                                      text: data.vehicleUid != ''
+                                          ? data.vehicle!.licensePlate
+                                              .toUpperCase()
+                                          : 'No Vehicle',
                                       fontWeight: FontWeight.bold,
                                       fontSize: 26,
                                       color: Colors.grey[700],
@@ -314,8 +318,9 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                                   Column(
                                     children: [
                                       WidgetText(
-                                        text:
-                                            '${data.vehicle!.odo.toStringAsFixed(0)} KM',
+                                        text: data.vehicleUid != ''
+                                            ? '${data.vehicle!.odo.toStringAsFixed(0)} KM'
+                                            : '0 KM',
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
                                       ),
@@ -344,80 +349,99 @@ class _DetailVehiclePageState extends State<DetailVehiclePage> {
                             const SizedBox(
                               height: 20,
                             ),
-                            WidgetText(
-                              text: 'Service Detail',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                              color: Colors.grey[700],
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            SizedBox(
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                            Visibility(
+                              visible: data.vehicleUid != '',
+                              child: Column(
                                 children: [
                                   WidgetText(
-                                    text: 'Service Odo Every...',
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
-                                  WidgetText(
-                                    text:
-                                        '${data.vehicle!.serviceOdoEvery.toStringAsFixed(0)} KM',
+                                    text: 'Service Detail',
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 14,
+                                    fontSize: 20,
+                                    color: Colors.grey[700],
+                                  ),
+                                  const SizedBox(
+                                    height: 20,
+                                  ),
+                                  Visibility(
+                                    visible: data.vehicleUid != '',
+                                    child: SizedBox(
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          WidgetText(
+                                            text: 'Service Odo Every...',
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                          ),
+                                          WidgetText(
+                                            text: data.vehicleUid != ''
+                                                ? '${data.vehicle!.serviceOdoEvery.toStringAsFixed(0)} KM'
+                                                : '0 KM',
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    height: 20,
+                                  ),
+                                  Visibility(
+                                    visible: data.vehicleUid != '',
+                                    child: SizedBox(
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          WidgetText(
+                                            text: 'Next service in',
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                          ),
+                                          WidgetText(
+                                            text: data.vehicleUid != ''
+                                                ? '${data.nextServiceOdo!.toStringAsFixed(0)} KM'
+                                                : '0 KM',
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    height: 20,
+                                  ),
+                                  Visibility(
+                                    visible: data.vehicleUid != '',
+                                    child: SizedBox(
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          WidgetText(
+                                            text: 'Last service ODO',
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                          ),
+                                          WidgetText(
+                                            text: data.vehicleUid != ''
+                                                ? '${data.vehicle!.lastService!.serviceAtOdo.toStringAsFixed(0)} KM'
+                                                : '0 KM',
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    height: 20,
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            SizedBox(
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  WidgetText(
-                                    text: 'Next service in',
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
-                                  WidgetText(
-                                    text:
-                                        '${data.nextServiceOdo!.toStringAsFixed(0)} KM',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            SizedBox(
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  WidgetText(
-                                    text: 'Last service ODO',
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
-                                  WidgetText(
-                                    text:
-                                        '${data.vehicle!.lastService!.serviceAtOdo.toStringAsFixed(0)} KM',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 20,
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,

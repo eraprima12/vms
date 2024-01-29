@@ -50,7 +50,9 @@ class User {
       avatar: json['avatar'] ?? "",
       companyUid: json['company_uid'] ?? "",
       nextServiceOdo: 0,
-      createdAt: (json['created_at'] as Timestamp).toDate(),
+      createdAt: json['created_at'] != null
+          ? (json['created_at'] as Timestamp).toDate()
+          : DateTime.now(),
       password: json['password'] ?? "",
       token: json['token'] ?? "",
       type: json['type'] ?? "",
@@ -72,7 +74,7 @@ class User {
     return {
       'avatar': avatar,
       'company_uid': companyUid,
-      'created_at': createdAt.toUtc().toIso8601String(),
+      // 'created_at': createdAt.toUtc().toIso8601String(),
       'password': password,
       'token': token,
       'position': position,
@@ -88,12 +90,15 @@ class PositionModel {
   DateTime dateTime;
   GeoPoint geopoint;
   double speed;
+  String vehicleUID;
+  String userUID;
 
-  PositionModel({
-    required this.dateTime,
-    required this.geopoint,
-    required this.speed,
-  });
+  PositionModel(
+      {required this.dateTime,
+      required this.geopoint,
+      required this.speed,
+      required this.vehicleUID,
+      required this.userUID});
 
   factory PositionModel.fromMap(Map<String, dynamic> map) {
     GeoPoint geoPoint = map['geopoint'];
@@ -102,6 +107,8 @@ class PositionModel {
       dateTime: (map['created_at'] as Timestamp).toDate(),
       geopoint: geoPoint,
       speed: map['speed']?.toDouble() ?? 0,
+      vehicleUID: map['vehicle_uid'] ?? '',
+      userUID: map['user_uid'] ?? '',
     );
   }
 

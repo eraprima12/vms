@@ -30,9 +30,8 @@ class FCMTokenChangeListener {
         log(jsonEncode('$currentToken $fcmToken'));
         if (fcmToken != currentToken) {
           stopListening();
-          localStorage.erase();
           pageMover.pushAndRemove(widget: const LoginPage());
-          popupHandler.showErrorPopup('Session Expired');
+          // popupHandler.showErrorPopup('Session Expired');
         }
       }
     });

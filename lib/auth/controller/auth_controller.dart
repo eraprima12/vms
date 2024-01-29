@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:permission_handler/permission_handler.dart'
@@ -77,7 +76,7 @@ class AuthController extends ChangeNotifier {
         return master;
       } else {
         loadingMaster = false;
-        throw 'Error while getting master';
+        return null;
       }
     } catch (e) {
       popupHandler.showErrorPopup(e.toString());
@@ -258,9 +257,9 @@ class AuthController extends ChangeNotifier {
 
   logout() async {
     await localStorage.erase();
-    tokenListener.stopListening();
     Provider.of<BGLocatorProvider>(context, listen: false).onStop();
     pageMover.pushAndRemove(widget: const LoginPage());
+    tokenListener.stopListening();
   }
 
   getAndSetUserDetail({required String uid}) async {
@@ -270,7 +269,7 @@ class AuthController extends ChangeNotifier {
   initListener() async {
     String uid = localStorage.read(uidKey);
     getAndSetUserDetail(uid: uid);
- tokenListener = FCMTokenChangeListener(
+    tokenListener = FCMTokenChangeListener(
       uid: uid,
       currentToken: user!.token,
     );
@@ -290,8 +289,6 @@ class AuthController extends ChangeNotifier {
           var driverController =
               Provider.of<DriversController>(context, listen: false);
           var positionData = await driverController.getPosition(uid: user.uid);
-          var vehicleData =
-              await driverController.getVehicle(uid: user.vehicleUid);
           user.position = positionData[0];
           user.position.sort(
             (a, b) => b.dateTime.compareTo(a.dateTime),
@@ -301,15 +298,28 @@ class AuthController extends ChangeNotifier {
               driverController.distanceCoveragePast(positionData[0], 7);
           user.totalDistanceYesterday =
               driverController.distanceCoveragePast(positionData[0], 1);
-          user.totalDistance =
-              driverController.totalDistanceCoverage(positionData[0]);
           user.distanceToday =
               driverController.distanceCoveragePast(positionData[0], 0);
-          user.vehicle = vehicleData;
-          if (user.vehicle != null) {
+          user.totalDistance =
+              driverController.totalDistanceCoverage(positionData[0]);
+          if (user.vehicleUid != '') {
+            var vehicleData =
+                await driverController.getVehicle(uid: user.vehicleUid);
+            user.vehicle = vehicleData;
+            var vehicleLogData =
+                await driverController.getPositionVehicle(uid: user.vehicleUid);
+            var totalDistanceVehicleLogData =
+                driverController.totalDistanceCoverage(vehicleLogData[0]);
             user.nextServiceOdo = user.vehicle!.serviceOdoEvery -
-                (user.vehicle!.odo - user.vehicle!.lastService!.serviceAtOdo);
+                ((user.vehicle!.odo + totalDistanceVehicleLogData.toInt()) -
+                    user.vehicle!.lastService!.serviceAtOdo);
+
+            logger.f(user.nextServiceOdo);
+            user.vehicle!.odo =
+                (user.vehicle!.odo + totalDistanceVehicleLogData.toInt());
           }
+          localStorage.write(userKey, user.toJson());
+
           user.tripHistory =
               driverController.separatePositionsByDateTime(positionData[0]);
         }
@@ -334,19 +344,21 @@ class AuthController extends ChangeNotifier {
           .get();
       DocumentSnapshot userDoc = querySnapshot.docs.first;
       String storedPassword = userDoc.get('password');
-      String uid = userDoc.id;
-      loadingLogin = false;
-      user = await getUserDetails(uid: uid);
 
-      if (passwordController.text == storedPassword) {
-      logger.f(user!.type == driverKey);
-        String currentToken = await updateToken(uid: uid);
-        getMasterSettings(uid: uid);
+      String uid = userDoc.id;
       user = await getUserDetails(uid: uid);
+      if (passwordController.text == storedPassword) {
+        logger.f(user!.type == driverKey);
+        String currentToken = await updateToken(uid: uid);
+        user = await getUserDetails(uid: uid);
         localStorage.write(tokenKey, currentToken);
         localStorage.write(uidKey, uid);
         localStorage.write(companyUidKey, user!.companyUid);
         putIsDriver(value: (user!.type == driverKey));
+        await getMasterSettings(uid: uid);
+        await Provider.of<DriversController>(context, listen: false)
+            .getListVehicle();
+        loadingLogin = false;
         if (user!.type == driverKey) {
           var permissonLocation =
               (await permission_handler.Permission.location.isGranted);
@@ -359,11 +371,11 @@ class AuthController extends ChangeNotifier {
               allowedPermission: allowedPermission,
             ));
           } else {
-      logger.f('masuk sini gan');
+            logger.f('masuk sini gan');
             pageMover.pushAndRemove(widget: const HomeDriver());
           }
         } else {
-      logger.f('masuk sana gan');
+          logger.f('masuk sana gan');
           pageMover.pushAndRemove(widget: const TabBarBottomNavPage());
         }
       } else {

@@ -12,6 +12,7 @@ import 'package:vms/auth/model/driver_model.dart';
 import 'package:vms/auth/model/user_model.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/global/function/date_function.dart';
+import 'package:vms/global/model/notification_model.dart';
 
 class DriversController extends ChangeNotifier {
   bool _loadingGetUser = false;
@@ -32,6 +33,13 @@ class DriversController extends ChangeNotifier {
   List<Service> get listService => _listService;
   set listService(List<Service> value) {
     _listService = value;
+    notifyListeners();
+  }
+
+  List<NotificationModel> _listNotif = [];
+  List<NotificationModel> get listNotif => _listNotif;
+  set listNotif(List<NotificationModel> value) {
+    _listNotif = value;
     notifyListeners();
   }
 
@@ -64,7 +72,7 @@ class DriversController extends ChangeNotifier {
   }
 
   double calculateTotalDistance(List<LatLng> points) {
-    const double earthRadius = 6371; // Earth's radius in kilometers
+    const double earthRadius = 6371;
 
     double degreesToRadians(double degrees) {
       return degrees * (pi / 180);
@@ -120,9 +128,40 @@ class DriversController extends ChangeNotifier {
       List<LatLng> latlngList = [];
       List<LatLng> latlngListToday = [];
       var positionCollection = await FirebaseFirestore.instance
-          .collection('user')
-          .doc(uid)
           .collection('position')
+          .where('user_uid', isEqualTo: uid)
+          .get();
+      if (positionCollection.docs.isNotEmpty) {
+        positionCollection.docs.map(
+          (e) {
+            var data = e.data();
+            PositionModel position = PositionModel.fromMap(data);
+            latlngList.add(
+              LatLng(position.geopoint.latitude, position.geopoint.longitude),
+            );
+            if (isWithinCurrentDay(position.dateTime)) {
+              latlngListToday.add(
+                LatLng(position.geopoint.latitude, position.geopoint.longitude),
+              );
+            }
+            res.add(position);
+          },
+        ).toList();
+      }
+      return {0: res, 1: latlngList, 2: latlngListToday};
+    } catch (e) {
+      return {0: [], 1: [], 2: []};
+    }
+  }
+
+  Future<Map<int, dynamic>> getPositionVehicle({required String uid}) async {
+    try {
+      List<PositionModel> res = [];
+      List<LatLng> latlngList = [];
+      List<LatLng> latlngListToday = [];
+      var positionCollection = await FirebaseFirestore.instance
+          .collection('position')
+          .where('vehicle_uid', isEqualTo: uid)
           .get();
       if (positionCollection.docs.isNotEmpty) {
         positionCollection.docs.map(
@@ -239,7 +278,6 @@ class DriversController extends ChangeNotifier {
 
       List<Vehicle> vehicles = [];
       querySnapshot.docs.map((doc) {
-        logger.f(doc);
         late Vehicle data =
             Vehicle.fromJson(doc.data() as Map<String, dynamic>);
         Future.delayed(const Duration()).then((value) async {
@@ -250,9 +288,11 @@ class DriversController extends ChangeNotifier {
       for (int i = 0; i < vehicles.length; i++) {
         bool dataFound = false;
         for (int j = 0; j < driverData.length; j++) {
-          if (driverData[j].vehicle!.uid == vehicles[i].uid) {
-            dataFound = true;
-            break;
+          if (driverData[j].vehicleUid != '') {
+            if (driverData[j].vehicle!.uid == vehicles[i].uid) {
+              dataFound = true;
+              break;
+            }
           }
         }
         if (!dataFound) {
@@ -337,6 +377,40 @@ class DriversController extends ChangeNotifier {
   double totalDistanceCoverage(List<PositionModel> positions) {
     positions.sort((a, b) => b.dateTime.compareTo(a.dateTime));
 
+    Map<String, double> totalDistanceByDay = {};
+    double previousLatitude = 0.0;
+    double previousLongitude = 0.0;
+
+    for (int i = 0; i < positions.length; i++) {
+      PositionModel position = positions[i];
+
+      // Extract day from createdAt
+      String day =
+          '${position.dateTime.year}-${position.dateTime.month}-${position.dateTime.day}';
+
+      if (i > 0 && totalDistanceByDay.containsKey(day)) {
+        totalDistanceByDay[day] = totalDistanceByDay[day]! +
+            haversine(
+              previousLatitude,
+              previousLongitude,
+              position.geopoint.latitude,
+              position.geopoint.longitude,
+            );
+      } else {
+        totalDistanceByDay[day] = 0.0;
+      }
+
+      previousLatitude = position.geopoint.latitude;
+      previousLongitude = position.geopoint.longitude;
+    }
+    double totalDistance = totalDistanceByDay.values.fold(0.0, (a, b) => a + b);
+
+    return totalDistance;
+  }
+
+  double distanceCoverageCounter(List<PositionModel> positions, DateTime time) {
+    positions.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
     double totalDistance = 0.0;
     double previousLatitude = 0.0;
     double previousLongitude = 0.0;
@@ -344,17 +418,21 @@ class DriversController extends ChangeNotifier {
     for (int i = 0; i < positions.length; i++) {
       PositionModel position = positions[i];
 
-      if (i > 0) {
-        totalDistance += haversine(
-          previousLatitude,
-          previousLongitude,
-          position.geopoint.latitude,
-          position.geopoint.longitude,
-        );
-      }
+      if (position.dateTime.isAtSameMomentAs(time)) {
+        if (i > 0) {
+          totalDistance += haversine(
+            previousLatitude,
+            previousLongitude,
+            position.geopoint.latitude,
+            position.geopoint.longitude,
+          );
+        }
 
-      previousLatitude = position.geopoint.latitude;
-      previousLongitude = position.geopoint.longitude;
+        previousLatitude = position.geopoint.latitude;
+        previousLongitude = position.geopoint.longitude;
+      } else {
+        break;
+      }
     }
 
     return totalDistance;
@@ -397,6 +475,7 @@ class DriversController extends ChangeNotifier {
 
   Future<List<User>> getDriverData() async {
     try {
+      listNotif.clear();
       String? companyUid = localStorage.read(companyUidKey) ?? '';
       QuerySnapshot<Object?> driversCollection = await FirebaseFirestore
           .instance
@@ -410,19 +489,43 @@ class DriversController extends ChangeNotifier {
         var data = doc.data() as Map<String, dynamic>;
         User driver = User.fromJson(data);
         var positionData = await getPosition(uid: driver.uid);
-        var vehicleData = await getVehicle(uid: driver.vehicleUid);
         driver.position = positionData[0];
+
         driver.position.sort((a, b) => b.dateTime.compareTo(a.dateTime));
         driver.totalDistanceYesterday =
             distanceCoveragePast(positionData[0], 1);
         driver.totalDistancePast7Days =
             distanceCoveragePast(positionData[0], 7);
         driver.totalDistance = totalDistanceCoverage(positionData[0]);
+        driver.distanceToday = distanceCoveragePast(positionData[0], 0);
         distanceCoveragePast(positionData[0], 0);
-        driver.vehicle = vehicleData;
-        if (driver.vehicle != null) {
+        if (driver.vehicleUid != '') {
+          var vehicleData = await getVehicle(uid: driver.vehicleUid);
+          driver.vehicle = vehicleData;
+          var vehicleLogData = await getPositionVehicle(uid: driver.vehicleUid);
+          var totalDistanceVehicleLogData =
+              totalDistanceCoverage(vehicleLogData[0]);
+          logger.f(totalDistanceVehicleLogData);
           driver.nextServiceOdo = driver.vehicle!.serviceOdoEvery -
-              (driver.vehicle!.odo - driver.vehicle!.lastService!.serviceAtOdo);
+              ((driver.vehicle!.odo + totalDistanceVehicleLogData.toInt()) -
+                  driver.vehicle!.lastService!.serviceAtOdo);
+          for (int i = 0; i < driver.position.length; i++) {
+            if ((driver.position[i].speed * 3.6).toInt() >
+                vehicleData.overspeedLimit) {
+              listNotif.add(
+                NotificationModel(
+                  speed: (driver.position[i].speed * 3.6).toInt(),
+                  driverName: driver.name,
+                  date: DateFormat('dd-MMM-yyyy').format(
+                    driver.position[i].dateTime,
+                  ),
+                ),
+              );
+            }
+          }
+          listNotif.sort((a, b) => b.date.compareTo(a.date));
+          driver.vehicle!.odo =
+              (driver.vehicle!.odo + totalDistanceVehicleLogData.toInt());
         }
         driver.tripHistory = separatePositionsByDateTime(positionData[0]);
         driverList.add(driver);

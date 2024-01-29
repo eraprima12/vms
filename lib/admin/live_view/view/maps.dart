@@ -71,33 +71,32 @@ class _MapScreenState extends State<MapScreen> {
     var futures = <Future>[];
 
     for (var userDoc in docs) {
-      var positionsSnapshot =
-          await FirebaseFirestore.instance.collection('position').get();
-
       var temp = User.fromJson(userDoc.data() as Map<String, dynamic>);
-      var vehicleRef =
-          FirebaseFirestore.instance.collection('vehicle').doc(temp.vehicleUid);
 
-      var future = vehicleRef.get();
-      futures.add(future);
+      var positionsSnapshot = await FirebaseFirestore.instance
+          .collection('position')
+          .where('user_uid', isEqualTo: temp.uid)
+          .get();
 
       users.add(temp
         ..position = positionsSnapshot.docs.map((positionDoc) {
           return PositionModel.fromMap(positionDoc.data());
         }).toList());
-    }
 
-    var vehicleSnapshots = await Future.wait(futures);
+      if (temp.vehicleUid != '') {
+        var vehicleRef = FirebaseFirestore.instance
+            .collection('vehicle')
+            .doc(temp.vehicleUid);
+        var future = await vehicleRef.get();
 
-    for (var i = 0; i < users.length; i++) {
-      var snapshot = vehicleSnapshots[i];
-      Map<String, dynamic> dataVehicle =
-          snapshot.data() as Map<String, dynamic>;
-      Vehicle vehicle = Vehicle.fromJson(dataVehicle);
-      users[i].vehicle = vehicle;
-      users[i].position.sort(
-            (a, b) => b.dateTime.compareTo(a.dateTime),
-          );
+        Map<String, dynamic> dataVehicle =
+            future.data() as Map<String, dynamic>;
+        Vehicle vehicle = Vehicle.fromJson(dataVehicle);
+        temp.vehicle = vehicle;
+        temp.position.sort(
+          (a, b) => b.dateTime.compareTo(a.dateTime),
+        );
+      }
     }
 
     return users;
@@ -121,7 +120,7 @@ class _MapScreenState extends State<MapScreen> {
         }
 
         List<User> user = snapshot.data!;
-
+        logger.f('${user.length} anjay');
         return SafeArea(
           child: Stack(
             children: [
@@ -148,7 +147,8 @@ class _MapScreenState extends State<MapScreen> {
                     subdomains: const ['a', 'b', 'c'],
                   ),
                   MarkerLayer(
-                    markers: user.map(
+                    markers:
+                        user.where((element) => element.vehicleUid != '').map(
                       (e) {
                         if (e.position.isNotEmpty) {
                           return Marker(
@@ -198,25 +198,32 @@ class _MapScreenState extends State<MapScreen> {
                     isFullScreen: true,
                     suggestionsBuilder:
                         (BuildContext context, SearchController controller) {
-                      final filteredDrivers = driverProvider.driverData
-                          .where(
-                            (element) =>
-                                element.vehicle!.licensePlate
-                                    .toLowerCase()
-                                    .contains(
-                                      searchController.text.toLowerCase(),
-                                    ) ||
-                                element.name.toLowerCase().contains(
-                                      searchController.text.toLowerCase(),
-                                    ),
-                          )
-                          .toList();
+                      final filteredDrivers =
+                          driverProvider.driverData.where((element) {
+                        if (element.vehicleUid != '') {
+                          return element.vehicle!.licensePlate
+                                  .toLowerCase()
+                                  .contains(
+                                    searchController.text.toLowerCase(),
+                                  ) ||
+                              element.name.toLowerCase().contains(
+                                    searchController.text.toLowerCase(),
+                                  );
+                        } else {
+                          return element.name.toLowerCase().contains(
+                                searchController.text.toLowerCase(),
+                              );
+                        }
+                      }).toList();
                       return List<ListTile>.generate(
                         filteredDrivers.length,
                         (int index) {
                           final String name = filteredDrivers[index].name;
-                          final String licensePlate =
-                              filteredDrivers[index].vehicle!.licensePlate;
+                          String licensePlate = '';
+                          if (filteredDrivers[index].vehicleUid != '') {
+                            licensePlate =
+                                filteredDrivers[index].vehicle!.licensePlate;
+                          }
                           return ListTile(
                             title: Text(name),
                             trailing: Text(licensePlate),

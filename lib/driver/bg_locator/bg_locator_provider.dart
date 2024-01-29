@@ -52,10 +52,15 @@ class BGLocatorProvider extends ChangeNotifier {
           if (data != null) {
             var temp = await localStorage.read(uidKey);
             if (temp != null) {
-              await sendToGetStorage(LocationDto.fromJson(data));
-              if (totalData == 1) {
-                postGPSBuffer();
-                totalData = 0;
+              var temps = localStorage.read(userKey);
+              User user = User.fromJson(temps);
+              var temp = LocationDto.fromJson(data);
+              if ((temp.speed * 3.6) > 5 && user.vehicleUid != '') {
+                await sendToGetStorage(LocationDto.fromJson(data));
+                if (totalData == 1) {
+                  postGPSBuffer();
+                  totalData = 0;
+                }
               }
             }
           }
@@ -97,6 +102,8 @@ class BGLocatorProvider extends ChangeNotifier {
     List<PositionModel> listPosition = [];
     for (int i = 0; i < data.length; i++) {
       PositionModel temp = PositionModel(
+        userUID: '',
+        vehicleUID: '',
         dateTime: DateTime.now(),
         geopoint: GeoPoint(data[i].latitude, data[i].longitude),
         speed: data[i].speed,
@@ -108,26 +115,27 @@ class BGLocatorProvider extends ChangeNotifier {
 
   postGPSBuffer() async {
     try {
-      var uid = localStorage.read(uidKey);
-      var param = buildParam(uid);
+      var temp = localStorage.read(userKey);
+      User user = User.fromJson(temp);
+      var param = buildParam(user.uid);
       for (int i = 0; i < param.length; i++) {
         var positionUID = generateRandomString(length: 10);
         await FirebaseFirestore.instance
-            .collection('user')
-            .doc(uid)
             .collection('position')
             .doc(positionUID)
             .set({
           'created_at': Timestamp.fromDate(param[i].dateTime),
           'geopoint': param[i].geopoint,
           'uid': positionUID,
-          'speed': param[i].speed
+          'speed': param[i].speed,
+          'vehicle_uid': user.vehicleUid,
+          'user_uid': user.uid
         });
       }
       var triggerID = generateRandomString(length: 10);
       await FirebaseFirestore.instance
           .collection('user')
-          .doc(uid)
+          .doc(user.uid)
           .update({'trigger_id': triggerID});
       clearGetStorage();
     } catch (e) {
@@ -208,7 +216,7 @@ class BGLocatorProvider extends ChangeNotifier {
       androidSettings: const AndroidSettings(
         accuracy: LocationAccuracy.NAVIGATION,
         interval: 10,
-        distanceFilter: 1,
+        distanceFilter: 10,
         wakeLockTime: 1440,
         client: LocationClient.google,
         androidNotificationSettings: AndroidNotificationSettings(

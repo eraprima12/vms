@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vms/admin/home/controller/home_controller.dart';
 import 'package:vms/admin/home/view/list_driver.dart';
+import 'package:vms/admin/home/view/notification.dart';
 import 'package:vms/admin/home/widget/card_widget.dart';
-import 'package:vms/auth/controller/auth_controller.dart';
+import 'package:vms/admin/settings/view/list_vehicle.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/gen/position_generator.dart';
+import 'package:vms/global/widget/animated_switcher.dart';
 import 'package:vms/global/widget/widgettext.dart';
 
 class HomePage extends StatefulWidget {
@@ -39,8 +41,14 @@ class _HomePageState extends State<HomePage> {
     var provider = Provider.of<DriversController>(context);
     var unlistenedProvider =
         Provider.of<DriversController>(context, listen: false);
-    var length =
-        provider.driverData.length < 3 ? provider.driverData.length : 3;
+    var length = provider.driverData.length < 3
+        ? provider.driverData
+            .where((element) => element.vehicleUid != '')
+            .length
+        : 3;
+    var data = provider.driverData
+        .where((element) => element.vehicleUid != '')
+        .toList();
     var homeProvider = Provider.of<HomeController>(context);
     var unlistenedHomeProvider =
         Provider.of<HomeController>(context, listen: false);
@@ -91,8 +99,7 @@ class _HomePageState extends State<HomePage> {
                                         color: textColor,
                                         fontSize: 24,
                                         fontWeight: FontWeight.w700,
-                                        text:
-                                            'Hi, ${Provider.of<AuthController>(context).user?.username}',
+                                        text: 'Hi, ${DateTime.now()}}',
                                       ),
                                     ),
                                   ),
@@ -109,7 +116,10 @@ class _HomePageState extends State<HomePage> {
                                 ],
                               ),
                               IconButton(
-                                onPressed: () {},
+                                onPressed: () {
+                                  //notif disini
+                                  pageMover.push(widget: const ListNotif());
+                                },
                                 icon: const Icon(Icons.notifications),
                               )
                             ],
@@ -193,48 +203,56 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          provider.driverData
-                                  .where((element) => element.isOnline)
-                                  .toList()
-                                  .isNotEmpty
-                              ? Row(
-                                  children: [
-                                    Expanded(
-                                      child: CardWithTitleAndSubtitle(
-                                        color: primaryColor,
-                                        title: 'Driver Online',
-                                        data: WidgetText(
-                                          color: Colors.white,
-                                          text: provider.driverData
-                                              .where(
-                                                  (element) => element.isOnline)
-                                              .toList()
-                                              .length
-                                              .toString(),
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w700,
+                          PageSwitcherAnimations(
+                            child: provider.driverData
+                                    .where((element) => element.isOnline)
+                                    .toList()
+                                    .isNotEmpty
+                                ? Row(
+                                    children: [
+                                      Expanded(
+                                        child: CardWithTitleAndSubtitle(
+                                          color: primaryColor,
+                                          title: 'Driver Online',
+                                          data: WidgetText(
+                                            color: Colors.white,
+                                            text: provider.driverData
+                                                .where((element) =>
+                                                    element.isOnline)
+                                                .toList()
+                                                .length
+                                                .toString(),
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(
-                                      width: 10,
-                                    ),
-                                    Expanded(
-                                      child: CardWithTitleAndSubtitle(
-                                        color: primaryColor,
-                                        title: 'Vehicle Active total',
-                                        data: WidgetText(
-                                          color: Colors.white,
-                                          text: provider.driverData.length
-                                              .toString(),
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w700,
+                                      const SizedBox(
+                                        width: 10,
+                                      ),
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            pageMover.push(
+                                                widget: const ListVehicle());
+                                          },
+                                          child: CardWithTitleAndSubtitle(
+                                            color: primaryColor,
+                                            title: 'Vehicle Active total',
+                                            data: WidgetText(
+                                              color: Colors.white,
+                                              text: provider.listVehicle.length
+                                                  .toString(),
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                )
-                              : const SizedBox(),
+                                    ],
+                                  )
+                                : const SizedBox(),
+                          ),
                           const SizedBox(height: 20),
                           Row(
                             children: [
@@ -488,9 +506,7 @@ class _HomePageState extends State<HomePage> {
                                                         CircleAvatar(
                                                           backgroundColor:
                                                               Colors.white,
-                                                          child: provider
-                                                                      .driverData[
-                                                                          i]
+                                                          child: data[i]
                                                                       .avatar !=
                                                                   ''
                                                               ? ClipRRect(
@@ -501,9 +517,7 @@ class _HomePageState extends State<HomePage> {
                                                                   ),
                                                                   child: Image
                                                                       .network(
-                                                                    provider
-                                                                        .driverData[
-                                                                            i]
+                                                                    data[i]
                                                                         .avatar,
                                                                     height: 50,
                                                                     width: 50,
@@ -512,9 +526,7 @@ class _HomePageState extends State<HomePage> {
                                                                   ),
                                                                 )
                                                               : WidgetText(
-                                                                  text: provider
-                                                                      .driverData[
-                                                                          i]
+                                                                  text: data[i]
                                                                       .name
                                                                       .substring(
                                                                           0, 1)
@@ -536,9 +548,7 @@ class _HomePageState extends State<HomePage> {
                                                                     .start,
                                                             children: [
                                                               WidgetText(
-                                                                text: provider
-                                                                    .driverData[
-                                                                        i]
+                                                                text: data[i]
                                                                     .vehicle!
                                                                     .licensePlate,
                                                                 color: Colors
@@ -549,7 +559,7 @@ class _HomePageState extends State<HomePage> {
                                                               ),
                                                               WidgetText(
                                                                 text:
-                                                                    '${provider.driverData[i].nextServiceOdo} KM',
+                                                                    '${data[i].nextServiceOdo} KM',
                                                                 color: Colors
                                                                     .white,
                                                                 fontWeight:

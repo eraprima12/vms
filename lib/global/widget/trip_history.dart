@@ -13,6 +13,7 @@ import 'package:vms/admin/live_view/widget/custom_marker.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/auth/model/user_model.dart';
 import 'package:vms/constant.dart';
+import 'package:vms/global/widget/animated_switcher.dart';
 import 'package:vms/global/widget/widgettext.dart';
 
 class TripHistory extends StatefulWidget {
@@ -27,21 +28,24 @@ class _TripHistoryPageState extends State<TripHistory> {
   List<LatLng> animatedLatLngList = [];
   bool playing = false;
   Timestamp? value;
+  String licensePlate = '';
   MapController mapController = MapController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  late User data;
+  User? data;
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback(
       (_) async {
         await Provider.of<DriversController>(context, listen: false)
             .getAndMapDriverData();
+        await Provider.of<DriversController>(context, listen: false)
+            .getListVehicle();
         data = Provider.of<DriversController>(context, listen: false)
             .driverData
             .where((element) => element.uid == widget.uid)
             .first;
-        value = data.tripHistory[0];
+        value = data!.tripHistory[0];
         setState(() {});
       },
     );
@@ -56,142 +60,155 @@ class _TripHistoryPageState extends State<TripHistory> {
       appBar: AppBar(
         title: const Text('Trip History'),
       ),
-      body: value == null
-          ? const Center(
-              child: CupertinoActivityIndicator(),
-            )
-          : Scaffold(
-              bottomNavigationBar: Container(
-                height: 80,
-                padding: const EdgeInsets.all(16),
-                color: Colors.white,
-                child: GestureDetector(
-                  onTap: () {
-                    _startAnimation(date: value!);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: !playing ? primaryColor : Colors.grey,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          offset: const Offset(0, 1),
-                          spreadRadius: 1,
-                          blurRadius: 5,
-                          color: !playing ? primaryColor : Colors.grey,
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          WidgetText(
-                            text: 'Play',
-                            fontWeight: FontWeight.bold,
+      body: PageSwitcherAnimations(
+          child: data == null
+              ? const Center(
+                  child: CupertinoActivityIndicator(),
+                )
+              : data!.position.isEmpty
+                  ? const Center(
+                      child: WidgetText(text: 'There`s No Data'),
+                    )
+                  : value == null
+                      ? const Center(
+                          child: CupertinoActivityIndicator(),
+                        )
+                      : Scaffold(
+                          bottomNavigationBar: Container(
+                            height: 80,
+                            padding: const EdgeInsets.all(16),
                             color: Colors.white,
-                          ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          Icon(
-                            Icons.play_circle,
-                            color: Colors.white,
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              body: Stack(
-                children: [
-                  FlutterMap(
-                    options: const MapOptions(
-                      center: LatLng(-7.2, 112),
-                      zoom: 15.0,
-                    ),
-                    mapController: mapController,
-                    children: [
-                      TileLayer(
-                        urlTemplate:
-                            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                        subdomains: const ['a', 'b', 'c'],
-                      ),
-                      PolylineLayer(
-                        polylines: [
-                          Polyline(
-                            points: animatedLatLngList,
-                            color: primaryColor,
-                            strokeWidth: 4.0,
-                          ),
-                        ],
-                      ),
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                            width: 100,
-                            height: 100,
-                            point: animatedLatLngList.isNotEmpty
-                                ? animatedLatLngList.last
-                                : const LatLng(0, 0),
-                            child: CustomMarker(
-                                licensePlate: data.vehicle!.licensePlate,
-                                status: data.isOnline),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  DraggableScrollableSheet(
-                    maxChildSize: 0.2,
-                    minChildSize: 0.2,
-                    initialChildSize: 0.2,
-                    builder: (BuildContext context,
-                        ScrollController scrollController) {
-                      return Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(20)),
-                        ),
-                        child: SingleChildScrollView(
-                          controller: scrollController,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Center(
-                                child: Container(
-                                  width: 40,
-                                  height: 5,
-                                  margin:
-                                      const EdgeInsets.symmetric(vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey,
-                                    borderRadius: BorderRadius.circular(8),
+                            child: GestureDetector(
+                              onTap: () {
+                                _startAnimation(date: value!);
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: !playing ? primaryColor : Colors.grey,
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      offset: const Offset(0, 1),
+                                      spreadRadius: 1,
+                                      blurRadius: 5,
+                                      color:
+                                          !playing ? primaryColor : Colors.grey,
+                                    ),
+                                  ],
+                                ),
+                                child: const Center(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      WidgetText(
+                                        text: 'Play',
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                      SizedBox(
+                                        width: 10,
+                                      ),
+                                      Icon(
+                                        Icons.play_circle,
+                                        color: Colors.white,
+                                      )
+                                    ],
                                   ),
                                 ),
                               ),
-                              const SizedBox(
-                                height: 20,
+                            ),
+                          ),
+                          body: Stack(
+                            children: [
+                              FlutterMap(
+                                options: const MapOptions(
+                                  center: LatLng(-7.2, 112),
+                                  zoom: 20.0,
+                                ),
+                                mapController: mapController,
+                                children: [
+                                  TileLayer(
+                                    urlTemplate:
+                                        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                                    subdomains: const ['a', 'b', 'c'],
+                                  ),
+                                  PolylineLayer(
+                                    polylines: [
+                                      Polyline(
+                                        points: animatedLatLngList,
+                                        color: primaryColor,
+                                        strokeWidth: 4.0,
+                                      ),
+                                    ],
+                                  ),
+                                  MarkerLayer(
+                                    markers: [
+                                      Marker(
+                                        width: 100,
+                                        height: 100,
+                                        point: animatedLatLngList.isNotEmpty
+                                            ? animatedLatLngList.last
+                                            : const LatLng(0, 0),
+                                        child: CustomMarker(
+                                            licensePlate: licensePlate,
+                                            status: data!.isOnline),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                              DropDownWidget(
-                                selectedValue: value!,
-                                onChanged: (values) {
-                                  value = values;
-                                  setState(() {});
+                              DraggableScrollableSheet(
+                                maxChildSize: 0.2,
+                                minChildSize: 0.2,
+                                initialChildSize: 0.2,
+                                builder: (BuildContext context,
+                                    ScrollController scrollController) {
+                                  return Container(
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(20)),
+                                    ),
+                                    child: SingleChildScrollView(
+                                      controller: scrollController,
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Center(
+                                            child: Container(
+                                              width: 40,
+                                              height: 5,
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 8),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(
+                                            height: 20,
+                                          ),
+                                          DropDownWidget(
+                                            selectedValue: value!,
+                                            onChanged: (values) {
+                                              value = values;
+                                              setState(() {});
+                                            },
+                                            tripHistory: data!.tripHistory,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
                                 },
-                                tripHistory: data.tripHistory,
                               ),
                             ],
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
+                        )),
     );
   }
 
@@ -214,7 +231,7 @@ class _TripHistoryPageState extends State<TripHistory> {
         playing = true;
       });
       animatedLatLngList = [];
-      var dataWithDate = data.position
+      var dataWithDate = data!.position
           .where((element) =>
               DateFormat('dd-MMM-yyyy').format(element.dateTime) ==
               DateFormat('dd-MMM-yyyy').format(date.toDate()))
@@ -228,6 +245,11 @@ class _TripHistoryPageState extends State<TripHistory> {
         await Future.delayed(const Duration(milliseconds: 100));
 
         setState(() {
+          licensePlate = Provider.of<DriversController>(context, listen: false)
+              .listVehicle
+              .where((element) => element.uid == animatedData[i].vehicleUID)
+              .first
+              .licensePlate;
           animatedLatLngList.add(LatLng(animatedData[i].geopoint.latitude,
               animatedData[i].geopoint.longitude));
         });

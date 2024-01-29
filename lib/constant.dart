@@ -21,6 +21,7 @@ final localStorage = GetStorage();
 PopupHandler popupHandler = PopupHandler();
 var tokenKey = 'token';
 var driverKey = 'driver';
+var userKey = 'user';
 var offlineStatus = 'offline';
 var onlineStatus = 'online';
 var parkingStatus = 'parking';
