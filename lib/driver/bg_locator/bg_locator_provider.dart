@@ -39,14 +39,10 @@ class BGLocatorProvider extends ChangeNotifier {
 
   initiate(context) async {
     try {
-      if (IsolateNameServer.lookupPortByName(
-              LocationServiceRepository.isolateName) !=
-          null) {
-        IsolateNameServer.removePortNameMapping(
-            LocationServiceRepository.isolateName);
+      if (IsolateNameServer.lookupPortByName(LocationServiceRepository.isolateName) != null) {
+        IsolateNameServer.removePortNameMapping(LocationServiceRepository.isolateName);
       }
-      IsolateNameServer.registerPortWithName(
-          port.sendPort, LocationServiceRepository.isolateName);
+      IsolateNameServer.registerPortWithName(port.sendPort, LocationServiceRepository.isolateName);
       port.listen(
         (dynamic data) async {
           if (data != null) {
@@ -120,10 +116,7 @@ class BGLocatorProvider extends ChangeNotifier {
       var param = buildParam(user.uid);
       for (int i = 0; i < param.length; i++) {
         var positionUID = generateRandomString(length: 10);
-        await FirebaseFirestore.instance
-            .collection('position')
-            .doc(positionUID)
-            .set({
+        await FirebaseFirestore.instance.collection('position').doc(positionUID).set({
           'created_at': Timestamp.fromDate(param[i].dateTime),
           'geopoint': param[i].geopoint,
           'uid': positionUID,
@@ -133,10 +126,7 @@ class BGLocatorProvider extends ChangeNotifier {
         });
       }
       var triggerID = generateRandomString(length: 10);
-      await FirebaseFirestore.instance
-          .collection('user')
-          .doc(user.uid)
-          .update({'trigger_id': triggerID});
+      await FirebaseFirestore.instance.collection('user').doc(user.uid).update({'trigger_id': triggerID});
       clearGetStorage();
     } catch (e) {
       logger.f(e);
@@ -146,10 +136,7 @@ class BGLocatorProvider extends ChangeNotifier {
 
   updateIsOnline(bool isOnline) async {
     var uid = localStorage.read(uidKey);
-    await FirebaseFirestore.instance
-        .collection('user')
-        .doc(uid)
-        .update({'is_online': isOnline});
+    await FirebaseFirestore.instance.collection('user').doc(uid).update({'is_online': isOnline});
   }
 
   ///Gak guna
@@ -179,15 +166,12 @@ class BGLocatorProvider extends ChangeNotifier {
   Future<void> _updateNotificationText(bool error, bool isMocked) async {
     if (isMocked) {
       await BackgroundLocator.updateNotificationText(
-          title: 'Mock Location terdeteksi',
-          msg: 'Anda menggunakan mock location',
-          bigMsg: 'Lokasi anda terdeteksi kecurangan');
+          title: 'Mock Location terdeteksi', msg: 'Anda menggunakan mock location', bigMsg: 'Lokasi anda terdeteksi kecurangan');
     } else {
       await BackgroundLocator.updateNotificationText(
           title: error ? 'Lokasi Error' : 'Lokasi dikirim ke server',
           msg: '${DateTime.now()}',
-          bigMsg:
-              error ? 'Terjadi Error' : 'Lokasi anda telah dikirim ke server');
+          bigMsg: error ? 'Terjadi Error' : 'Lokasi anda telah dikirim ke server');
     }
   }
 
