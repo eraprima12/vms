@@ -28,19 +28,22 @@ class _ListDriverState extends State<ListDriver> {
   void initState() {
     var driverData =
         Provider.of<DriversController>(context, listen: false).driverData;
-    for (int i = 0; i < driverData.length; i++) {
-      for (int j = 0; j < driverData[i].tripHistory.length; j++) {
-        list.add(driverData[i].tripHistory[j]);
+    if (driverData.isNotEmpty) {
+      for (int i = 0; i < driverData.length; i++) {
+        for (int j = 0; j < driverData[i].tripHistory.length; j++) {
+          list.add(driverData[i].tripHistory[j]);
+        }
       }
+      var temp = Set<Timestamp>.from(list);
+      list = temp.toList();
+      list.sort(
+        (a, b) => b.compareTo(a),
+      );
+      value = list[0];
+      logger.f(list.length);
+      setState(() {});
     }
-    var temp = Set<Timestamp>.from(list);
-    list = temp.toList();
-    list.sort(
-      (a, b) => b.compareTo(a),
-    );
-    value = list[0];
-    logger.f(list.length);
-    setState(() {});
+
     super.initState();
   }
 
@@ -122,98 +125,104 @@ class _ListDriverState extends State<ListDriver> {
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  itemCount: widget.isHighest
-                      ? provider.highestDriverData
-                          .where((element) => element.name
-                              .toLowerCase()
-                              .contains(controller.text.toLowerCase()))
-                          .length
-                      : provider.lowestDriverData
-                          .where((element) => element.name
-                              .toLowerCase()
-                              .contains(controller.text.toLowerCase()))
-                          .length,
-                  itemBuilder: (ctx, i) {
-                    var item = widget.isHighest
-                        ? provider.highestDriverData
-                            .where((element) => element.name
-                                .toLowerCase()
-                                .contains(controller.text.toLowerCase()))
-                            .toList()
-                        : provider.lowestDriverData
-                            .where((element) => element.name
-                                .toLowerCase()
-                                .contains(controller.text.toLowerCase()))
-                            .toList();
-                    return ListTile(
-                      onTap: () {
-                        if (widget.isMaster!) {
-                          pageMover.push(
-                              widget: AddDriver(
-                            data: item[i],
-                            isEdit: true,
-                          ));
-                        } else {
-                          pageMover.push(
-                              widget: DetailVehiclePage(uid: item[i].uid));
-                        }
-                      },
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.white,
-                        child: item[i].avatar != ''
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(50),
-                                child: Image.network(
-                                  item[i].avatar,
-                                  height: 50,
-                                  width: 50,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : WidgetText(
-                                text:
-                                    item[i].name.substring(0, 1).toUpperCase(),
-                                color: secondaryColor,
-                                fontWeight: FontWeight.bold,
-                              ),
+                child: provider.driverData.isEmpty
+                    ? const SizedBox()
+                    : ListView.builder(
+                        itemCount: widget.isHighest
+                            ? provider.highestDriverData
+                                .where((element) => element.name
+                                    .toLowerCase()
+                                    .contains(controller.text.toLowerCase()))
+                                .length
+                            : provider.lowestDriverData
+                                .where((element) => element.name
+                                    .toLowerCase()
+                                    .contains(controller.text.toLowerCase()))
+                                .length,
+                        itemBuilder: (ctx, i) {
+                          var item = widget.isHighest
+                              ? provider.highestDriverData
+                                  .where((element) => element.name
+                                      .toLowerCase()
+                                      .contains(controller.text.toLowerCase()))
+                                  .toList()
+                              : provider.lowestDriverData
+                                  .where((element) => element.name
+                                      .toLowerCase()
+                                      .contains(controller.text.toLowerCase()))
+                                  .toList();
+                          return ListTile(
+                            onTap: () {
+                              if (widget.isMaster!) {
+                                pageMover.push(
+                                    widget: AddDriver(
+                                  data: item[i],
+                                  isEdit: true,
+                                ));
+                              } else {
+                                pageMover.push(
+                                    widget:
+                                        DetailVehiclePage(uid: item[i].uid));
+                              }
+                            },
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.white,
+                              child: item[i].avatar != ''
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(50),
+                                      child: Image.network(
+                                        item[i].avatar,
+                                        height: 50,
+                                        width: 50,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : WidgetText(
+                                      text: item[i]
+                                          .name
+                                          .substring(0, 1)
+                                          .toUpperCase(),
+                                      color: secondaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                            ),
+                            title: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                WidgetText(text: item[i].name),
+                                i == 0 && widget.isHighest
+                                    ? Lottie.asset('assets/king.json',
+                                        height: 50)
+                                    : i == 0 && !widget.isHighest
+                                        ? Lottie.asset('assets/dislike.json',
+                                            height: 50)
+                                        : const SizedBox()
+                              ],
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                WidgetText(
+                                    fontWeight: FontWeight.bold,
+                                    text:
+                                        'Today : ${item[i].distanceToday.toStringAsFixed(2)} KM'),
+                                WidgetText(
+                                    fontWeight: FontWeight.bold,
+                                    text:
+                                        'Yesterday : ${item[i].totalDistanceYesterday.toStringAsFixed(2)} KM'),
+                                WidgetText(
+                                    fontWeight: FontWeight.bold,
+                                    text:
+                                        'Past 7 Days : ${item[i].totalDistancePast7Days.toStringAsFixed(2)} KM'),
+                                WidgetText(
+                                    fontWeight: FontWeight.bold,
+                                    text:
+                                        'Total : ${item[i].totalDistance.toStringAsFixed(2)} KM'),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                      title: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          WidgetText(text: item[i].name),
-                          i == 0 && widget.isHighest
-                              ? Lottie.asset('assets/king.json', height: 50)
-                              : i == 0 && !widget.isHighest
-                                  ? Lottie.asset('assets/dislike.json',
-                                      height: 50)
-                                  : const SizedBox()
-                        ],
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          WidgetText(
-                              fontWeight: FontWeight.bold,
-                              text:
-                                  'Today : ${item[i].distanceToday.toStringAsFixed(2)} KM'),
-                          WidgetText(
-                              fontWeight: FontWeight.bold,
-                              text:
-                                  'Yesterday : ${item[i].totalDistanceYesterday.toStringAsFixed(2)} KM'),
-                          WidgetText(
-                              fontWeight: FontWeight.bold,
-                              text:
-                                  'Past 7 Days : ${item[i].totalDistancePast7Days.toStringAsFixed(2)} KM'),
-                          WidgetText(
-                              fontWeight: FontWeight.bold,
-                              text:
-                                  'Total : ${item[i].totalDistance.toStringAsFixed(2)} KM'),
-                        ],
-                      ),
-                    );
-                  },
-                ),
               ),
             ],
           ),

@@ -7,6 +7,7 @@ import 'package:vms/admin/home/view/list_driver.dart';
 import 'package:vms/admin/home/view/notification.dart';
 import 'package:vms/admin/home/widget/card_widget.dart';
 import 'package:vms/admin/settings/view/list_vehicle.dart';
+import 'package:vms/auth/controller/auth_controller.dart';
 import 'package:vms/auth/controller/drivers_controller.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/gen/position_generator.dart';
@@ -99,7 +100,8 @@ class _HomePageState extends State<HomePage> {
                                         color: textColor,
                                         fontSize: 24,
                                         fontWeight: FontWeight.w700,
-                                        text: 'Hi, ${DateTime.now()}}',
+                                        text:
+                                            'Hi, ${Provider.of<AuthController>(context).user!.name}',
                                       ),
                                     ),
                                   ),

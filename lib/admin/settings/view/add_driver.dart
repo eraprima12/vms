@@ -34,37 +34,42 @@ class _AddDriverState extends State<AddDriver> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (widget.data != null) {
-        _usernameController.text = widget.data!.username;
-        _passwordController.text = widget.data!.password;
-        _nameController.text = widget.data!.name;
-        Provider.of<DriversController>(context, listen: false)
-            .getListVehicle(unique: true);
-        Provider.of<DriversController>(context, listen: false)
-            .getAndMapDriverData();
-        if (widget.data!.vehicle != null) {
-          _vehicleUID.text = widget.data!.vehicle!.licensePlate;
-          selected = widget.data!.vehicle!;
-          if (widget.isEdit!) {
+    WidgetsBinding.instance.addPostFrameCallback(
+      (timeStamp) {
+        if (widget.data != null) {
+          _usernameController.text = widget.data!.username;
+          _passwordController.text = widget.data!.password;
+          _nameController.text = widget.data!.name;
+          Provider.of<DriversController>(context, listen: false)
+              .getListVehicle(unique: true);
+          Provider.of<DriversController>(context, listen: false)
+              .getAndMapDriverData();
+          if (widget.data!.vehicle != null) {
+            _vehicleUID.text = widget.data!.vehicle!.licensePlate;
+            selected = widget.data!.vehicle!;
+            if (widget.isEdit!) {
+              Provider.of<DriversController>(context, listen: false)
+                  .listVehicle
+                  .add(widget.data!.vehicle!);
+            }
             Provider.of<DriversController>(context, listen: false)
                 .listVehicle
-                .add(widget.data!.vehicle!);
+                .add(
+                  Vehicle(
+                    avatar: '',
+                    companyUid: '',
+                    createdAt: DateTime.now(),
+                    licensePlate: 'Unassign',
+                    odo: 0,
+                    overspeedLimit: 0,
+                    serviceOdoEvery: 0,
+                    uid: '',
+                  ),
+                );
           }
-          Provider.of<DriversController>(context, listen: false)
-              .listVehicle
-              .add(Vehicle(
-                  avatar: '',
-                  companyUid: '',
-                  createdAt: DateTime.now(),
-                  licensePlate: 'Unassign',
-                  odo: 0,
-                  overspeedLimit: 0,
-                  serviceOdoEvery: 0,
-                  uid: ''));
         }
-      }
-    });
+      },
+    );
   }
 
   Future<void> _pickImage() async {
@@ -83,7 +88,7 @@ class _AddDriverState extends State<AddDriver> {
         .getListVehicle(unique: true);
     Provider.of<DriversController>(context, listen: false)
         .getAndMapDriverData();
-    if (formKey.currentState!.validate()) {
+    if (formKey.currentState!.validate() && selected != null) {
       await Provider.of<AuthController>(context, listen: false)
           .addDriver(
               widget.isEdit!,

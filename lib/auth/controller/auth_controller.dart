@@ -22,6 +22,7 @@ import 'package:vms/driver/home/view/home.dart';
 import 'package:vms/driver/permission/view/permission_page.dart';
 import 'package:vms/global/function/local_storage_handler.dart';
 import 'package:vms/global/function/random_string_generator.dart';
+import 'package:vms/global/model/company_model.dart';
 import 'package:vms/global/model/hexcolor.dart';
 import 'package:vms/global/widget/popup_handler.dart';
 
@@ -82,6 +83,62 @@ class AuthController extends ChangeNotifier {
       popupHandler.showErrorPopup(e.toString());
       return null;
     }
+  }
+
+  Future<void> addCompany(String companyName, String companyUID) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('company')
+          .doc(companyUID)
+          .set({
+        'approved': false,
+        'created_at': Timestamp.now(),
+        'name': companyName,
+        'primary_color': '',
+        'secondary_color': '',
+        'third_color': '',
+        'splash_screen': '',
+        'uid': companyUID
+      });
+    } catch (e) {
+      throw 'Error When adding Company';
+    }
+  }
+
+  Future<void> addAdmin(
+      String name, String password, String username, String companyUid) async {
+    try {
+      var driverController =
+          Provider.of<DriversController>(context, listen: false);
+      var double = driverController.driverData
+          .where((element) => element.username == username)
+          .toList();
+
+      var uids = generateRandomString(length: 10);
+
+      if (double.isEmpty) {
+        await FirebaseFirestore.instance.collection('user').doc(uids).set({
+          'avatar': '',
+          'company_uid': companyUid,
+          'created_at': Timestamp.fromDate(DateTime.now()),
+          'is_online': false,
+          'name': name,
+          'password': password,
+          'token': '',
+          'trigger_id': '',
+          'type': 'admin',
+          'uid': uids,
+          'username': username,
+          'vehicle_uid': '',
+        }).then((value) {
+          popupHandler.showSuccessPopup('Success Add Driver');
+        });
+        Provider.of<DriversController>(context, listen: false)
+            .getAndMapDriverData();
+      } else {
+        popupHandler.showErrorPopup('Username already taken');
+      }
+    } catch (e) {}
   }
 
   Future<void> addDriver(bool isEdit, User? data, String name, String password,
@@ -344,43 +401,50 @@ class AuthController extends ChangeNotifier {
           .get();
       DocumentSnapshot userDoc = querySnapshot.docs.first;
       String storedPassword = userDoc.get('password');
-
       String uid = userDoc.id;
       user = await getUserDetails(uid: uid);
-      if (passwordController.text == storedPassword) {
-        logger.f(user!.type == driverKey);
-        String currentToken = await updateToken(uid: uid);
-        user = await getUserDetails(uid: uid);
-        localStorage.write(tokenKey, currentToken);
-        localStorage.write(uidKey, uid);
-        localStorage.write(companyUidKey, user!.companyUid);
-        putIsDriver(value: (user!.type == driverKey));
-        await getMasterSettings(uid: uid);
-        await Provider.of<DriversController>(context, listen: false)
-            .getListVehicle();
-        loadingLogin = false;
-        if (user!.type == driverKey) {
-          var permissonLocation =
-              (await permission_handler.Permission.location.isGranted);
-          var permissionNotification =
-              (await permission_handler.Permission.notification.isGranted);
-          var allowedPermission = '';
-          if ((!permissonLocation || !permissionNotification)) {
-            pageMover.pushAndRemove(
-                widget: LocationPermissionPage(
-              allowedPermission: allowedPermission,
-            ));
+      Company? company = await getMasterSettings(uid: user!.companyUid);
+      if (company != null) {
+        if (company.approved!) {
+          if (passwordController.text == storedPassword) {
+            logger.f(user!.type == driverKey);
+            String currentToken = await updateToken(uid: uid);
+            user = await getUserDetails(uid: uid);
+            localStorage.write(tokenKey, currentToken);
+            localStorage.write(uidKey, uid);
+            localStorage.write(companyUidKey, user!.companyUid);
+            putIsDriver(value: (user!.type == driverKey));
+            await Provider.of<DriversController>(context, listen: false)
+                .getListVehicle();
+            loadingLogin = false;
+            if (user!.type == driverKey) {
+              var permissonLocation =
+                  (await permission_handler.Permission.location.isGranted);
+              var permissionNotification =
+                  (await permission_handler.Permission.notification.isGranted);
+              var allowedPermission = '';
+              if ((!permissonLocation || !permissionNotification)) {
+                pageMover.pushAndRemove(
+                    widget: LocationPermissionPage(
+                  allowedPermission: allowedPermission,
+                ));
+              } else {
+                logger.f('masuk sini gan');
+                pageMover.pushAndRemove(widget: const HomeDriver());
+              }
+            } else {
+              logger.f('masuk sana gan');
+              pageMover.pushAndRemove(widget: const TabBarBottomNavPage());
+            }
           } else {
-            logger.f('masuk sini gan');
-            pageMover.pushAndRemove(widget: const HomeDriver());
+            loadingLogin = false;
+            throw 'Wrong username/password';
           }
         } else {
-          logger.f('masuk sana gan');
-          pageMover.pushAndRemove(widget: const TabBarBottomNavPage());
+          throw 'Wait the company till it approved';
         }
       } else {
-        loadingLogin = false;
-        throw 'Wrong username/password';
+        throw 'Error When load company data';
       }
     } catch (e) {
       loadingLogin = false;

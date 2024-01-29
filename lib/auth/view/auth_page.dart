@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vms/auth/controller/auth_controller.dart';
+import 'package:vms/auth/view/register_page.dart';
 import 'package:vms/constant.dart';
 import 'package:vms/gen/assets.gen.dart';
 import 'package:vms/global/widget/template_textfield.dart';
@@ -104,6 +105,20 @@ class _LoginPageState extends State<LoginPage> {
                           usingValidator: true,
                           isPassword: true,
                           label: 'Password',
+                        ),
+                        const SizedBox(
+                          height: 100,
+                        ),
+                        Center(
+                          child: GestureDetector(
+                            onTap: () {
+                              pageMover.push(widget: const RegistrationPage());
+                            },
+                            child: const WidgetText(
+                              text: 'Create Account',
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ],
                     ),

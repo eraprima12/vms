@@ -273,8 +273,11 @@ class DriversController extends ChangeNotifier {
   Future<List<Vehicle>> getListVehicle({bool unique = false}) async {
     try {
       listVehicle = [];
-      QuerySnapshot querySnapshot =
-          await FirebaseFirestore.instance.collection('vehicle').get();
+      var companyUid = localStorage.read(companyUidKey);
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('vehicle')
+          .where('company_uid', isEqualTo: companyUid)
+          .get();
 
       List<Vehicle> vehicles = [];
       querySnapshot.docs.map((doc) {
