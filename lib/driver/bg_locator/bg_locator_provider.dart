@@ -71,6 +71,7 @@ class BGLocatorProvider extends ChangeNotifier {
   sendToGetStorage(LocationDto? locationDto) {
     var mocked = locationDto!.isMocked;
     if (!mocked) {
+      logger.f(locationDto.provider);
       _updateNotificationText(false, mocked);
       totalData++;
       final box = GetStorage();
@@ -200,7 +201,7 @@ class BGLocatorProvider extends ChangeNotifier {
       androidSettings: const AndroidSettings(
         accuracy: LocationAccuracy.NAVIGATION,
         interval: 10,
-        distanceFilter: 10,
+        distanceFilter: 0,
         wakeLockTime: 1440,
         client: LocationClient.google,
         androidNotificationSettings: AndroidNotificationSettings(
